@@ -1,0 +1,185 @@
+/* ── Variables ── */
+:root {
+  --ink:       #12100e;
+  --parchment: #f7edd8;
+  --cream:     #fffdf5;
+  --gold:      #b8880c;
+  --gold-lt:   #e0aa30;
+  --navy:      #162035;
+  --muted:     #7a6a50;
+  --rule:      rgba(184,136,12,0.25);
+  --shadow:    rgba(18,16,14,0.14);
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Base ── */
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 18px;
+  min-height: 100vh;
+}
+
+/* ── Nav ── */
+nav {
+  background: var(--navy);
+  border-bottom: 3px solid var(--gold);
+  padding: 0 2.5rem;
+  display: flex;
+  align-items: stretch;
+  height: 56px;
+}
+.nav-brand {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-weight: 900;
+  font-size: 1.25rem;
+  color: var(--parchment);
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding-left: 2rem;
+  letter-spacing: 0.03em;
+}
+.nav-brand span { color: var(--gold-lt); margin-right: 0.4rem; }
+.nav-links { display: flex; align-items: stretch; list-style: none; }
+.nav-links a {
+  display: flex;
+  align-items: center;
+  padding: 0 1.4rem;
+  color: var(--parchment);
+  text-decoration: none;
+  font-family: 'EB Garamond', serif;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -3px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.nav-links a:hover { color: var(--gold-lt); border-bottom-color: var(--gold-lt); }
+
+/* ── Page wrapper ── */
+.page { max-width: 860px; margin: 0 auto; padding: 3rem 2rem 8rem; }
+
+/* ── Index: hero ── */
+.hero { text-align: center; padding: 4rem 0 3rem; }
+.hero-scroll {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 1.5rem;
+  animation: sway 4s ease-in-out infinite;
+}
+@keyframes sway { 0%,100%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} }
+.hero h1 {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 2.6rem;
+  font-weight: 900;
+  color: var(--navy);
+  margin-bottom: 0.4rem;
+}
+.hero .week-label { color: var(--gold); font-style: italic; font-size: 1.2rem; margin-bottom: 2.5rem; }
+
+/* ── Index: cards ── */
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem; }
+@media (max-width: 600px) { .cards { grid-template-columns: 1fr; } }
+.card {
+  display: block;
+  text-decoration: none;
+  background: white;
+  border: 1px solid var(--rule);
+  border-top: 4px solid var(--gold);
+  border-radius: 4px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 20px var(--shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+  color: var(--ink);
+}
+.card:hover { transform: translateY(-4px); box-shadow: 0 10px 32px var(--shadow); }
+.card-icon { font-size: 2.2rem; display: block; margin-bottom: 0.75rem; }
+.card h2 { font-family: 'Frank Ruhl Libre', serif; font-size: 1.4rem; color: var(--navy); margin-bottom: 0.25rem; }
+.card .card-ref { font-size: 0.9rem; color: var(--muted); font-style: italic; direction: ltr; }
+.card .card-cta { display: inline-block; margin-top: 1.2rem; font-size: 0.9rem; color: var(--gold); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ── Parasha: header ── */
+.parasha-header { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid var(--rule); }
+.parasha-header h1 { font-family: 'Frank Ruhl Libre', serif; font-size: 2.2rem; font-weight: 900; color: var(--navy); }
+.parasha-header .ref-tag { font-size: 0.85rem; color: var(--muted); font-style: italic; direction: ltr; display: inline-block; margin-top: 0.25rem; }
+.legend { font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; font-style: italic; }
+.legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); margin-left: 0.3rem; vertical-align: middle; }
+
+/* ── Verse list ── */
+.verse-list { list-style: none; }
+.verse-item { border-bottom: 1px solid var(--rule); }
+.verse-item:first-child { border-top: 1px solid var(--rule); }
+
+.verse-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.7rem 0.5rem;
+  transition: background 0.12s;
+}
+/* Active (currently playing) verse highlight */
+.verse-item.active { background: rgba(184,136,12,0.12); border-right: 3px solid var(--gold); }
+
+.verse-num { font-family: 'Frank Ruhl Libre', serif; font-size: 0.75rem; color: var(--muted); min-width: 2rem; text-align: left; flex-shrink: 0; direction: ltr; padding-top: 3px; }
+.verse-text { font-family: 'Frank Ruhl Libre', serif; font-size: 1.3rem; line-height: 1.9; color: var(--ink); flex: 1; }
+
+/* Gold dot on verses that have a recording */
+.has-recording .verse-text::after {
+  content: '';
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+/* ── Sticky player bar ── */
+.player-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--navy);
+  border-top: 3px solid var(--gold);
+  padding: 0.9rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  z-index: 100;
+  direction: ltr;
+}
+.player-btn {
+  font-size: 1.5rem;
+  background: var(--gold);
+  color: var(--navy);
+  border: none;
+  border-radius: 50%;
+  width: 48px; height: 48px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+}
+.player-btn:hover { background: var(--gold-lt); transform: scale(1.07); }
+.player-btn:disabled { background: #444; color: #888; cursor: default; transform: none; }
+
+.player-info { flex: 1; min-width: 0; }
+.player-verse-label { font-family: 'Frank Ruhl Libre', serif; color: var(--parchment); font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-progress { font-size: 0.78rem; color: var(--gold-lt); margin-top: 0.1rem; }
+
+.player-skip {
+  background: transparent;
+  border: 1px solid var(--gold);
+  color: var(--gold-lt);
+  border-radius: 4px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.player-skip:hover { background: rgba(184,136,12,0.15); }
+.player-skip:disabled { opacity: 0.35; cursor: default; }

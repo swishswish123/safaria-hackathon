@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}{{ name }} · פרשת השבוע{% endblock %}
+
+{% block content %}
+<div class="parasha-header">
+  <h1>{{ name }}</h1>
+  <div class="ref-tag">{{ ref }}</div>
+  <div class="legend">
+    <span class="dot"></span> Gold dot = recording available
+  </div>
+</div>
+
+{# Pass verse data to JS as JSON #}
+<script>
+  const VERSES = {{ verses | tojson }};
+</script>
+
+<ul class="verse-list" id="verse-list">
+  {% for v in verses %}
+  <li class="verse-item {% if v.media_url %}has-recording{% endif %}" id="verse-{{ v.num }}">
+    <div class="verse-row">
+      <span class="verse-num">{{ v.num }}</span>
+      <span class="verse-text">{{ v.text }}</span>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+
+<!-- Sticky player bar -->
+<div class="player-bar">
+  <button class="player-btn" id="btn-prev" onclick="prevVerse()" title="Previous">◀</button>
+  <button class="player-btn" id="btn-play" onclick="togglePlay()" title="Play / Pause">▶</button>
+  <button class="player-btn" id="btn-next" onclick="nextVerse()" title="Next">▶▶</button>
+  <div class="player-info">
+    <div class="player-verse-label" id="player-label">Press ▶ to begin</div>
+    <div class="player-progress" id="player-progress"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let currentIndex = 0;   // index into VERSES array
+  let audio = null;
+  let playing = false;
+
+  const btnPlay     = document.getElementById('btn-play');
+  const btnPrev     = document.getElementById('btn-prev');
+  const btnNext     = document.getElementById('btn-next');
+  const labelEl     = document.getElementById('player-label');
+  const progressEl  = document.getElementById('player-progress');
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function highlightVerse(idx) {
+    document.querySelectorAll('.verse-item').forEach(el => el.classList.remove('active'));
+    const li = document.getElementById('verse-' + VERSES[idx].num);
+    if (li) {
+      li.classList.add('active');
+      li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  function updateLabel() {
+    const v = VERSES[currentIndex];
+    labelEl.textContent = v.anchor || `Verse ${v.num}`;
+    progressEl.textContent = `${currentIndex + 1} / ${VERSES.length}${v.media_url ? '' : ' · no recording'}`;
+  }
+
+  function stopAudio() {
+    if (audio) { audio.pause(); audio.src = ''; audio = null; }
+    playing = false;
+    btnPlay.textContent = '▶';
+  }
+
+  function loadAndPlay(idx) {
+    stopAudio();
+    currentIndex = idx;
+    highlightVerse(idx);
+    updateLabel();
+
+    const v = VERSES[idx];
+    if (!v.media_url) {
+      // No recording — auto-advance after a short pause so reading can keep up
+      btnPlay.textContent = '⏭';
+      setTimeout(() => { if (playing || true) advanceOrStop(); }, 1800);
+      return;
+    }
+
+    audio = new Audio(v.media_url);
+    audio.onended = advanceOrStop;
+    audio.onerror = advanceOrStop;   // skip broken files
+    audio.play().catch(advanceOrStop);
+    playing = true;
+    btnPlay.textContent = '⏸';
+  }
+
+  function advanceOrStop() {
+    if (currentIndex < VERSES.length - 1) {
+      loadAndPlay(currentIndex + 1);
+    } else {
+      stopAudio();
+      labelEl.textContent = 'Finished!';
+      progressEl.textContent = '';
+    }
+  }
+
+  // ── Controls ───────────────────────────────────────────────────────────────
+  function togglePlay() {
+    if (playing) {
+      // Pause
+      if (audio) audio.pause();
+      playing = false;
+      btnPlay.textContent = '▶';
+    } else {
+      // Resume or start
+      if (audio) {
+        audio.play();
+        playing = true;
+        btnPlay.textContent = '⏸';
+      } else {
+        loadAndPlay(currentIndex);
+      }
+    }
+  }
+
+  function nextVerse() {
+    if (currentIndex < VERSES.length - 1) loadAndPlay(currentIndex + 1);
+  }
+
+  function prevVerse() {
+    if (currentIndex > 0) loadAndPlay(currentIndex - 1);
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  updateLabel();
+  highlightVerse(0);
+</script>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}פרשת השבוע · Home{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <span class="hero-scroll">📜</span>
+  <h1>This Week's Portion</h1>
+  <p class="week-label">Select a section to study</p>
+  <div class="cards">
+    <a class="card" href="{{ url_for('read', ref=weekly.parasha.ref, name=weekly.parasha.name) }}">
+      <span class="card-icon">🕍</span>
+      <h2>{{ weekly.parasha.name }}</h2>
+      <div class="card-ref">{{ weekly.parasha.ref }}</div>
+      <span class="card-cta">Read & Listen →</span>
+    </a>
+    <a class="card" href="{{ url_for('read', ref=weekly.haftarah.ref, name=weekly.haftarah.name) }}">
+      <span class="card-icon">📖</span>
+      <h2>{{ weekly.haftarah.name }}</h2>
+      <div class="card-ref">{{ weekly.haftarah.ref }}</div>
+      <span class="card-cta">Read & Listen →</span>
+    </a>
+  </div>
+</div>
+{% endblock %}
