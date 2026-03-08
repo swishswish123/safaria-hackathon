@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ student_username }}'s Assignments – ScroLein</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(160deg, #f7edd8 0%, #fffdf5 60%, #f0e6d0 100%); min-height: 100vh; }
+
+        nav {
+            background-color: #6c3483; color: white;
+            padding: 10px 32px; display: flex;
+            justify-content: space-between; align-items: center;
+        }
+        .nav-logo { height: 44px; filter: brightness(0) invert(1); opacity: 0.92; }
+        nav h1 { font-size: 20px; }
+        .nav-right { display: flex; gap: 12px; align-items: center; }
+        .btn-back { padding: 8px 16px; background-color: rgba(255,255,255,0.15); color: white; border-radius: 5px; text-decoration: none; font-size: 14px; }
+        .btn-back:hover { background-color: rgba(255,255,255,0.25); }
+        .btn-logout { padding: 8px 16px; background-color: #c0392b; color: white; border-radius: 5px; text-decoration: none; font-size: 14px; }
+        .btn-logout:hover { background-color: #a93226; }
+
+        .container { max-width: 860px; margin: 32px auto; padding: 0 24px; }
+
+        .page-header { margin-bottom: 28px; }
+        .page-header h2 { font-size: 24px; color: #6c3483; margin-bottom: 4px; }
+        .page-header p  { color: #777; font-size: 14px; }
+
+        /* Section dividers */
+        .section-title {
+            font-size: 15px; font-weight: bold; color: #6c3483;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            border-bottom: 2px solid #d7bde2;
+            padding-bottom: 6px; margin: 28px 0 14px;
+        }
+
+        /* Assignment cards */
+        .assignment-card {
+            background: white; border-radius: 10px;
+            padding: 20px 24px; margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            display: flex; justify-content: space-between;
+            align-items: flex-start; gap: 16px; flex-wrap: wrap;
+        }
+        .assignment-card.submitted { border-left: 4px solid #27ae60; }
+
+        .ainfo { flex: 1; min-width: 0; }
+        .atitle { font-size: 16px; font-weight: bold; color: #2c3e50; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .ameta  { font-size: 13px; color: #777; margin-top: 3px; }
+        .anotes { font-size: 13px; color: #555; font-style: italic; margin-top: 6px; }
+
+        .badge-sub  { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #eafaf1; color: #1e8449; border: 1px solid #27ae60; }
+        .badge-rec  { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #f4ecf7; color: #6c3483; border: 1px solid #8e44ad; }
+        .badge-asn  { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #fef9e7; color: #b7770d; border: 1px solid #d4a020; }
+
+        .assignment-card.assigned { border-left: 4px solid #d4a020; }
+
+        .aactions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+
+        .btn-review {
+            padding: 10px 20px; background-color: #6c3483; color: white;
+            border-radius: 6px; text-decoration: none; font-size: 14px;
+            font-weight: bold; white-space: nowrap; transition: background 0.15s;
+        }
+        .btn-review:hover { background-color: #5b2c6f; }
+
+        .btn-preview {
+            padding: 10px 20px; background-color: #b7770d; color: white;
+            border-radius: 6px; text-decoration: none; font-size: 14px;
+            font-weight: bold; white-space: nowrap; transition: background 0.15s;
+        }
+        .btn-preview:hover { background-color: #9a6309; }
+
+        .submitted-at { font-size: 12px; color: #27ae60; margin-top: 4px; }
+
+        .empty-msg { color: #aaa; font-style: italic; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <img src="/static/scrolein_logo_white.png" alt="ScroLein" class="nav-logo">
+    <div class="nav-right">
+        <a href="/teacher/dashboard" class="btn-back">← Back to Dashboard</a>
+        <a href="/logout" class="btn-logout">Log Out</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-header">
+        <h2>{{ student_username }}'s Assignments</h2>
+        <p>
+            {{ submitted_count }} submitted &nbsp;·&nbsp;
+            {{ assigned_count }} assigned &nbsp;·&nbsp;
+            {{ total_count }} total
+        </p>
+    </div>
+
+    <!-- Submitted assignments -->
+    <div class="section-title">Submitted</div>
+    {% if submitted %}
+        {% for a in submitted %}
+        <div class="assignment-card submitted">
+            <div class="ainfo">
+                <div class="atitle">
+                    {{ a.title }}
+                    <span class="badge-sub">Submitted</span>
+                    {% if a.recording_filename %}<span class="badge-rec">Has Recording</span>{% endif %}
+                </div>
+                <div class="ameta">{{ a.parasha }} · {{ a.aliyah }} · Due: {{ a.due_date or "No date set" }}</div>
+                {% if a.submitted_at %}
+                <div class="submitted-at">Submitted {{ a.submitted_at.strftime('%B %d, %Y at %I:%M %p') }}</div>
+                {% endif %}
+                {% if a.notes %}<div class="anotes">Student note: {{ a.notes }}</div>{% endif %}
+            </div>
+            <div class="aactions">
+                {% if a.recording_filename %}
+                    <a href="/teacher/review/{{ a.id }}" class="btn-review">&#9654; Review Recording</a>
+                {% else %}
+                    <span style="font-size:13px; color:#bbb; font-style:italic;">No recording uploaded</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty-msg">No submitted assignments yet.</p>
+    {% endif %}
+
+    <!-- Assigned (not yet submitted) -->
+    <div class="section-title">Assigned — Awaiting Submission</div>
+    {% if assigned %}
+        {% for a in assigned %}
+        <div class="assignment-card assigned">
+            <div class="ainfo">
+                <div class="atitle">
+                    {{ a.title }}
+                    <span class="badge-asn">Assigned</span>
+                </div>
+                <div class="ameta">{{ a.parasha }} · {{ a.aliyah }} · Due: {{ a.due_date or "No date set" }}</div>
+                {% if a.notes %}<div class="anotes">Teacher note: {{ a.notes }}</div>{% endif %}
+            </div>
+            <div class="aactions">
+                {% if a.sefaria_ref %}
+                    <a href="/teacher/preview/{{ a.id }}" class="btn-preview">&#128196; Preview Assignment</a>
+                {% else %}
+                    <span style="font-size:13px; color:#bbb; font-style:italic;">No text linked</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty-msg">No outstanding assignments.</p>
+    {% endif %}
+
+</div>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Review: {{ assignment.title }} · Leining App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+  <style>
+    .back-btn {
+      display: flex; align-items: center; padding: 0 1.4rem;
+      color: var(--gold-lt); text-decoration: none;
+      font-family: 'EB Garamond', serif; font-size: 0.95rem;
+      letter-spacing: 0.04em; direction: ltr;
+    }
+    .back-btn:hover { color: white; }
+
+    /* Teacher context banner */
+    .teacher-banner {
+      background: #2c1a47;
+      border: 1px solid #8e44ad;
+      border-radius: 8px;
+      padding: 16px 22px;
+      margin-bottom: 1.4rem;
+      direction: ltr;
+    }
+    .tb-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+    .tb-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #b39ddb; margin-bottom: 3px; }
+    .tb-name  { color: white; font-family: 'Frank Ruhl Libre', serif; font-size: 1.1rem; font-weight: 700; }
+    .tb-meta  { color: #ce93d8; font-size: 0.85rem; margin-top: 4px; }
+    .tb-submitted { color: #a5d6a7; font-size: 0.8rem; margin-top: 4px; }
+    .tb-notes { color: #aaa; font-size: 0.82rem; font-style: italic; margin-top: 8px; border-top: 1px solid rgba(142,68,173,0.4); padding-top: 8px; }
+
+    /* Verse text — read-only, no hover pointer */
+    .verse-item { cursor: default !important; }
+    .verse-item:hover .verse-row { background: transparent !important; }
+
+    /* No recording badge */
+    .no-rec-badge {
+      display: inline-block; font-size: 0.65rem;
+      background: rgba(0,0,0,0.06); color: var(--muted);
+      border: 1px solid var(--rule); border-radius: 4px;
+      padding: 1px 6px; direction: ltr; vertical-align: middle; margin-left: 6px;
+    }
+
+    /* Override player bar for teacher: purple instead of navy */
+    .player-bar { background: #2c1a47; border-top-color: #8e44ad; }
+    .player-btn { background: #8e44ad; }
+    .player-btn:hover { background: #7d3c98; }
+    .player-verse-label { font-family: Arial, sans-serif; font-size: 0.9rem; }
+    .player-progress    { color: #ce93d8; }
+
+    /* Recording status in the player bar */
+    .recording-status {
+      font-size: 0.8rem; color: #ce93d8; margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <ul class="nav-links">
+    <a href="/teacher/student/{{ assignment.username }}" class="back-btn">← Back to {{ assignment.username }}'s Assignments</a>
+  </ul>
+  <div class="nav-brand"><img src="/static/scrolein_logo_white.png" alt="ScroLein" style="height:40px; filter:brightness(0) invert(1); opacity:0.92;"></div>
+</nav>
+
+<div class="page">
+
+  <!-- Teacher context banner -->
+  <div class="teacher-banner">
+    <div class="tb-row">
+      <div>
+        <div class="tb-label">Reviewing</div>
+        <div class="tb-name">{{ assignment.username }}</div>
+        <div class="tb-meta">{{ assignment.title }} &nbsp;·&nbsp; {{ assignment.parasha }} &nbsp;·&nbsp; {{ assignment.aliyah }}</div>
+        {% if assignment.submitted_at %}
+        <div class="tb-submitted">Submitted {{ assignment.submitted_at.strftime('%B %d, %Y at %I:%M %p') }}</div>
+        {% endif %}
+      </div>
+      {% if assignment.due_date %}
+      <div style="text-align:right; direction:ltr;">
+        <div class="tb-label">Due Date</div>
+        <div style="color: #e1bee7; font-size: 0.9rem;">{{ assignment.due_date }}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% if assignment.notes %}
+    <div class="tb-notes">Student's note: {{ assignment.notes }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Parasha header -->
+  <div class="parasha-header">
+    <h1>{{ name }}</h1>
+    <div class="ref-tag" style="direction:ltr;">{{ ref }}</div>
+    <div class="legend" style="direction:ltr; color: #8e44ad;">
+      Follow along below while listening to {{ assignment.username }}'s recording
+    </div>
+  </div>
+
+  <ul class="verse-list" id="verse-list">
+    {% for v in verses %}
+    <li class="verse-item" id="verse-{{ v.num }}">
+      <div class="verse-row">
+        <span class="verse-num" style="direction:ltr;">
+          {% if v.chapter is defined and v.verse is defined %}
+            {{ v.chapter }}:{{ v.verse }}
+          {% else %}
+            {{ v.num }}
+          {% endif %}
+        </span>
+        <span class="verse-text">{{ v.text }}</span>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <!-- Sticky player bar — plays student's single recording file -->
+  <div class="player-bar">
+    <button class="player-btn" id="btn-play" onclick="togglePlay()" title="Play / Pause">&#9654;</button>
+    <div class="player-info">
+      <div class="player-verse-label" id="player-label">
+        {{ assignment.username }}'s Recording — {{ assignment.title }}
+      </div>
+      <div class="player-progress" id="player-progress">Press Play to listen</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Hidden audio element for the student's recording -->
+<audio id="student-audio"
+       src="/static/recordings/{{ assignment.recording_filename }}"
+       preload="metadata"></audio>
+
+<script>
+const audio    = document.getElementById('student-audio');
+const btnPlay  = document.getElementById('btn-play');
+const progress = document.getElementById('player-progress');
+
+// Format seconds → m:ss
+function fmt(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, '0')}`;
+}
+
+// Update progress bar as audio plays
+audio.addEventListener('timeupdate', () => {
+  if (!audio.duration) return;
+  progress.textContent = `${fmt(audio.currentTime)} / ${fmt(audio.duration)}`;
+});
+
+audio.addEventListener('ended', () => {
+  btnPlay.innerHTML = '&#9654;';
+  progress.textContent = 'Finished';
+});
+
+audio.addEventListener('error', () => {
+  progress.textContent = 'Could not load recording file.';
+  btnPlay.disabled = true;
+});
+
+function togglePlay() {
+  if (audio.paused) {
+    audio.play();
+    btnPlay.innerHTML = '&#9646;&#9646;';
+  } else {
+    audio.pause();
+    btnPlay.innerHTML = '&#9654;';
+  }
+}
+</script>
+
+</body>
+</html>

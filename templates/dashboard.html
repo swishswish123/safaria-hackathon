@@ -2,21 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard – Leining App</title>
+    <title>Dashboard – ScroLein</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; background-color: #f5f0e8; min-height: 100vh; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(160deg, #f7edd8 0%, #fffdf5 60%, #f0e6d0 100%); min-height: 100vh; }
 
         /* ── Nav ── */
         nav {
-            background-color: #2c3e50;
+            background-color: #2c1a06;
             color: white;
-            padding: 16px 32px;
+            padding: 10px 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         nav h1 { font-size: 20px; }
+        .nav-logo { height: 44px; filter: brightness(0) invert(1); opacity: 0.92; }
         .nav-right { display: flex; gap: 10px; align-items: center; }
         .nav-right span { font-size: 14px; opacity: 0.8; }
         .btn-nav { padding: 8px 14px; border-radius: 5px; text-decoration: none; font-size: 13px; color: white; white-space: nowrap; }
@@ -36,7 +37,7 @@
         .teacher-block { margin-bottom: 20px; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.09); }
 
         .teacher-header {
-            background-color: #2c3e50;
+            background-color: #2c1a06;
             color: white;
             padding: 16px 22px;
             display: flex;
@@ -45,7 +46,7 @@
             cursor: pointer;
             user-select: none;
         }
-        .teacher-header:hover { background-color: #243342; }
+        .teacher-header:hover { background-color: #1e1204; }
         .teacher-header-left h2 { font-size: 17px; margin-bottom: 3px; }
         .teacher-pin { font-size: 12px; opacity: 0.7; letter-spacing: 1px; }
         .chevron { font-size: 18px; transition: transform 0.25s; }
@@ -62,8 +63,8 @@
         .section-title {
             font-size: 15px;
             font-weight: bold;
-            color: #2c3e50;
-            border-bottom: 2px solid #2c3e50;
+            color: #7a4f1a;
+            border-bottom: 2px solid #b8880c;
             padding-bottom: 6px;
             margin-bottom: 12px;
             margin-top: 18px;
@@ -102,6 +103,11 @@
         .btn-edit-small { padding: 6px 12px; background-color: #2980b9; color: white; border-radius: 5px; font-size: 12px; text-decoration: none; display: inline-block; }
         .btn-edit-small:hover { background-color: #1f6391; }
 
+        .btn-read       { padding: 8px 14px; background-color: #1e8449; color: white; border-radius: 5px; font-size: 13px; font-weight: bold; text-decoration: none; display: inline-block; border: none; }
+        .btn-read:hover { background-color: #196f3d; }
+        .btn-read-small       { padding: 6px 12px; background-color: #1e8449; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; text-decoration: none; display: inline-block; border: none; }
+        .btn-read-small:hover { background-color: #196f3d; }
+
         .empty-msg { color: #bbb; font-style: italic; font-size: 13px; margin-bottom: 10px; }
 
         /* ── No classes at all ── */
@@ -128,7 +134,7 @@
 <body>
 
     <nav>
-        <h1>Leining Review App</h1>
+        <img src="/static/scrolein_logo_white.png" alt="ScroLein" class="nav-logo">
         <div class="nav-right">
             <span>Shalom, {{ username }}!</span>
             <a href="/add-class" class="btn-nav btn-addclass">+ Join a Class</a>

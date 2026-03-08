@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Teacher Dashboard – Leining App</title>
+    <title>Teacher Dashboard – ScroLein</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; background-color: #f5f0e8; min-height: 100vh; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(160deg, #f7edd8 0%, #fffdf5 60%, #f0e6d0 100%); min-height: 100vh; }
 
         nav {
             background-color: #6c3483;
@@ -16,6 +16,7 @@
             align-items: center;
         }
         nav h1 { font-size: 20px; }
+        .nav-logo { height: 44px; filter: brightness(0) invert(1); opacity: 0.92; }
         .nav-right { display: flex; gap: 12px; align-items: center; }
         .nav-right span { font-size: 14px; opacity: 0.85; }
         .btn-logout { padding: 8px 16px; background-color: #c0392b; color: white; border-radius: 5px; text-decoration: none; font-size: 14px; }
@@ -71,15 +72,24 @@
         .student-card {
             background: white;
             border-radius: 10px;
-            padding: 20px 24px;
             margin-bottom: 14px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .student-card-header {
+            padding: 18px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 12px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s;
         }
+        .student-card-header:hover { background: #faf5ff; }
+        .student-card-header.open  { background: #f4ecf7; border-bottom: 1px solid #d7bde2; }
+
         .student-info h3 { font-size: 18px; color: #2c3e50; margin-bottom: 6px; }
         .badges { display: flex; gap: 8px; flex-wrap: wrap; }
         .badge {
@@ -90,18 +100,53 @@
         }
         .badge-total     { background: #eaf0fb; color: #2980b9; border: 1px solid #2980b9; }
         .badge-submitted { background: #eafaf1; color: #1e8449; border: 1px solid #27ae60; }
-        .badge-pending   { background: #fef9e7; color: #d68910; border: 1px solid #f39c12; }
+
+        .chevron {
+            font-size: 18px;
+            color: #8e44ad;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+        .chevron.open { transform: rotate(180deg); }
+
+        /* Dropdown panel */
+        .student-dropdown {
+            display: none;
+            padding: 16px 24px;
+            background: #fdfaff;
+            border-top: 1px solid #e8d5f5;
+            gap: 12px;
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+        .student-dropdown.open { display: flex; }
 
         .btn-assign {
-            padding: 10px 20px;
+            padding: 11px 22px;
             background-color: #6c3483;
             color: white;
             border-radius: 6px;
             text-decoration: none;
             font-size: 14px;
+            font-weight: bold;
             white-space: nowrap;
+            transition: background 0.15s;
         }
         .btn-assign:hover { background-color: #5b2c6f; }
+
+        .btn-view-assignments {
+            padding: 11px 22px;
+            background-color: white;
+            color: #6c3483;
+            border: 2px solid #6c3483;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .btn-view-assignments:hover { background-color: #6c3483; color: white; }
 
         .empty-msg { color: #aaa; font-style: italic; font-size: 14px; margin-bottom: 16px; }
     </style>
@@ -109,7 +154,7 @@
 <body>
 
     <nav>
-        <h1>Leining Review App — Teacher View</h1>
+        <img src="/static/scrolein_logo_white.png" alt="ScroLein" class="nav-logo">
         <div class="nav-right">
             <span>{{ teacher.username }}</span>
             <a href="/logout" class="btn-logout">Log Out</a>
@@ -137,15 +182,20 @@
         {% if student_data %}
             {% for s in student_data %}
             <div class="student-card">
-                <div class="student-info">
-                    <h3>{{ s.username }}</h3>
-                    <div class="badges">
-                        <span class="badge badge-total">{{ s.total }} assigned</span>
-                        <span class="badge badge-submitted">{{ s.submitted }} submitted</span>
-                        <span class="badge badge-pending">{{ s.pending }} pending</span>
+                <div class="student-card-header" onclick="toggleStudent('student-{{ loop.index }}')">
+                    <div class="student-info">
+                        <h3>{{ s.username }}</h3>
+                        <div class="badges">
+                            <span class="badge badge-total">{{ s.total }} assigned</span>
+                            <span class="badge badge-submitted">{{ s.submitted }} submitted</span>
+                        </div>
                     </div>
+                    <span class="chevron" id="chevron-student-{{ loop.index }}">&#9660;</span>
                 </div>
-                <a href="/teacher/assign/{{ s.username }}" class="btn-assign">+ Assign Work</a>
+                <div class="student-dropdown" id="student-{{ loop.index }}">
+                    <a href="/teacher/assign/{{ s.username }}" class="btn-assign">+ Assign Work</a>
+                    <a href="/teacher/student/{{ s.username }}" class="btn-view-assignments">&#128196; View Assignments</a>
+                </div>
             </div>
             {% endfor %}
         {% else %}
@@ -153,5 +203,23 @@
         {% endif %}
 
     </div>
+<script>
+function toggleStudent(id) {
+    const panel   = document.getElementById(id);
+    const header  = panel.previousElementSibling;
+    const chevron = document.getElementById('chevron-' + id);
+    const isOpen  = panel.classList.contains('open');
+    // Close all first
+    document.querySelectorAll('.student-dropdown').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.student-card-header').forEach(h => h.classList.remove('open'));
+    document.querySelectorAll('.chevron').forEach(c => c.classList.remove('open'));
+    // Toggle clicked one
+    if (!isOpen) {
+        panel.classList.add('open');
+        header.classList.add('open');
+        chevron.classList.add('open');
+    }
+}
+</script>
 </body>
 </html>

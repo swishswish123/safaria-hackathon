@@ -7,7 +7,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
   <style>
-    /* ── Our app's nav override ── */
     .back-btn {
       display: flex; align-items: center;
       padding: 0 1.4rem; color: var(--gold-lt);
@@ -16,42 +15,98 @@
     }
     .back-btn:hover { color: white; }
 
-    /* ── Assignment context banner ── */
+    /* ── Assignment banner ── */
     .assignment-banner {
-      background: var(--navy);
-      border: 1px solid var(--gold);
-      border-radius: 8px;
-      padding: 14px 20px;
-      margin-bottom: 1.8rem;
-      direction: ltr;
+      background: var(--navy); border: 1px solid var(--gold);
+      border-radius: 8px; padding: 14px 20px; margin-bottom: 1.2rem; direction: ltr;
     }
     .banner-title { color: var(--parchment); font-size: 1.05rem; font-family: 'Frank Ruhl Libre', serif; font-weight: 700; margin-bottom: 4px; }
     .banner-meta  { color: var(--gold-lt); font-size: 0.85rem; }
     .banner-note  { color: #aaa; font-size: 0.82rem; font-style: italic; margin-top: 6px; border-top: 1px solid rgba(184,136,12,0.3); padding-top: 6px; }
 
-    /* ── No recording indicator ── */
-    .no-rec-badge {
-      display: inline-block;
-      font-size: 0.65rem;
-      background: rgba(255,255,255,0.1);
-      color: var(--muted);
-      border: 1px solid var(--rule);
-      border-radius: 4px;
-      padding: 1px 6px;
+    /* ── Recording panel ── */
+    .record-panel {
+      background: white;
+      border: 2px solid var(--rule);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 1.5rem;
       direction: ltr;
-      vertical-align: middle;
-      margin-right: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+    }
+    .record-panel h3 {
+      font-family: 'Frank Ruhl Libre', serif;
+      font-size: 1.1rem;
+      color: var(--navy);
+      margin: 0;
+      flex-basis: 100%;
     }
 
-    /* ── Recording indicator override (dot on RIGHT since rtl) ── */
+    /* Record / Stop buttons */
+    .btn-record {
+      padding: 10px 22px; font-size: 15px; font-family: Arial, sans-serif;
+      border: none; border-radius: 6px; cursor: pointer; font-weight: bold;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-record.start { background-color: #c0392b; color: white; }
+    .btn-record.start:hover { background-color: #a93226; }
+    .btn-record.stop  { background-color: #7f8c8d; color: white; }
+    .btn-record.stop:hover  { background-color: #626f70; }
+    .btn-record:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Recording status dot */
+    .rec-dot {
+      display: none;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #c0392b;
+      animation: blink 1s infinite;
+      flex-shrink: 0;
+    }
+    .rec-dot.visible { display: inline-block; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    .rec-status { font-size: 14px; color: #555; font-family: Arial, sans-serif; }
+
+    /* Playback area after recording */
+    .playback-area { flex-basis: 100%; margin-top: 4px; }
+    .playback-area audio { width: 100%; border-radius: 6px; }
+
+    /* Upload status */
+    .upload-status {
+      font-size: 13px; font-family: Arial, sans-serif;
+      padding: 6px 12px; border-radius: 5px; display: none;
+    }
+    .upload-status.saving  { background: #fef9e7; color: #d68910; display: block; }
+    .upload-status.saved   { background: #eafaf1; color: #1e8449; display: block; }
+    .upload-status.error   { background: #fdf0ef; color: #c0392b; display: block; }
+
+    /* Existing recording notice */
+    .existing-recording {
+      flex-basis: 100%;
+      background: #eafaf1;
+      border: 1px solid #27ae60;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: Arial, sans-serif;
+      color: #1e8449;
+    }
+    .existing-recording audio { width: 100%; margin-top: 8px; border-radius: 4px; }
+
+    /* ── No recording badge on verses ── */
+    .no-rec-badge {
+      display: inline-block; font-size: 0.65rem;
+      background: rgba(0,0,0,0.06); color: var(--muted);
+      border: 1px solid var(--rule); border-radius: 4px;
+      padding: 1px 6px; direction: ltr; vertical-align: middle; margin-left: 6px;
+    }
     .has-recording .verse-text::before {
-      content: '';
-      display: inline-block;
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--gold);
-      margin-left: 0.5rem;
-      vertical-align: middle;
+      content: ''; display: inline-block;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--gold); margin-left: 0.5rem; vertical-align: middle;
     }
     .has-recording .verse-text::after { display: none; }
   </style>
@@ -62,7 +117,7 @@
   <ul class="nav-links">
     <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
   </ul>
-  <div class="nav-brand"><span>✡</span> Leining App</div>
+  <div class="nav-brand"><img src="/static/scrolein_logo_white.png" alt="ScroLein" style="height:40px; filter:brightness(0) invert(1); opacity:0.92;"></div>
 </nav>
 
 <div class="page">
@@ -71,24 +126,60 @@
   {% if assignment %}
   <div class="assignment-banner">
     <div class="banner-title">{{ assignment.title }}</div>
-    <div class="banner-meta">{{ assignment.parasha }} · {{ assignment.aliyah }}{% if assignment.due_date %} · Due: {{ assignment.due_date }}{% endif %}</div>
+    <div class="banner-meta">
+      {{ assignment.parasha }} · {{ assignment.aliyah }}
+      {% if assignment.due_date %} · Due: {{ assignment.due_date }}{% endif %}
+    </div>
     {% if assignment.notes %}
     <div class="banner-note">Teacher's note: {{ assignment.notes }}</div>
     {% endif %}
   </div>
   {% endif %}
 
+  <!-- ── RECORDING PANEL ── -->
+  {% if assignment %}
+  <div class="record-panel">
+    <h3>Record Your Leining</h3>
+
+    <!-- Show existing recording if there is one -->
+    {% if assignment.recording_filename %}
+    <div class="existing-recording">
+      You have a saved recording for this assignment. Recording again will replace it.
+      <audio controls src="/static/recordings/{{ assignment.recording_filename }}"></audio>
+    </div>
+    {% endif %}
+
+    <button class="btn-record start" id="btn-start-rec" onclick="startRecording()">
+      Start Recording
+    </button>
+    <button class="btn-record stop" id="btn-stop-rec" onclick="stopRecording()" disabled>
+      Stop Recording
+    </button>
+
+    <span class="rec-dot" id="rec-dot"></span>
+    <span class="rec-status" id="rec-status">Press "Start Recording" when you are ready to lein.</span>
+
+    <div class="playback-area" id="playback-area" style="display:none;">
+      <audio id="playback-audio" controls></audio>
+    </div>
+
+    <div class="upload-status" id="upload-status"></div>
+  </div>
+  {% endif %}
+
+  <!-- Parasha header -->
   <div class="parasha-header">
     <h1>{{ name }}</h1>
     <div class="ref-tag" style="direction:ltr;">{{ ref }}</div>
     <div class="legend" style="direction:ltr;">
-      <span class="dot"></span> Gold dot = recording available &nbsp;·&nbsp;
+      <span class="dot"></span> Gold dot = Sefaria cantillation recording available &nbsp;·&nbsp;
       <strong>{{ verses | length }}</strong> pasukim in this aliyah
     </div>
   </div>
 
   <script>
-    const VERSES = {{ verses | tojson }};
+    const VERSES        = {{ verses | tojson }};
+    const ASSIGNMENT_ID = {{ assignment.id if assignment else 'null' }};
   </script>
 
   <ul class="verse-list" id="verse-list">
@@ -115,7 +206,7 @@
     {% endfor %}
   </ul>
 
-  <!-- Sticky player bar -->
+  <!-- Sticky Sefaria player bar -->
   <div class="player-bar">
     <button class="player-btn" id="btn-prev" onclick="go(-1)" title="Previous pasuk">&#9664;</button>
     <button class="player-btn" id="btn-play" onclick="togglePlay()" title="Play / Pause">&#9654;</button>
@@ -126,90 +217,167 @@
     </div>
   </div>
 
-</div>
+</div><!-- end .page -->
 
 <script>
-  let idx = 0, audio = null, paused = false;
-  const btnPlay    = document.getElementById('btn-play');
-  const labelEl    = document.getElementById('player-label');
-  const progressEl = document.getElementById('player-progress');
+// ══════════════════════════════════════════════════════
+// SECTION 1 — Sefaria cantillation player (unchanged logic)
+// ══════════════════════════════════════════════════════
+let idx = 0, audio = null, paused = false;
+const btnPlay    = document.getElementById('btn-play');
+const labelEl    = document.getElementById('player-label');
+const progressEl = document.getElementById('player-progress');
 
-  function highlight(i) {
-    document.querySelectorAll('.verse-item').forEach(el => el.classList.remove('active'));
-    const li = document.getElementById('verse-' + VERSES[i].num);
-    if (li) { li.classList.add('active'); li.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+function highlight(i) {
+  document.querySelectorAll('.verse-item').forEach(el => el.classList.remove('active'));
+  const li = document.getElementById('verse-' + VERSES[i].num);
+  if (li) { li.classList.add('active'); li.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+}
+function updateBar() {
+  const v = VERSES[idx];
+  const label = (v.chapter && v.verse) ? `Pasuk ${v.chapter}:${v.verse}` : `Pasuk ${v.num}`;
+  labelEl.textContent    = label;
+  progressEl.textContent = `${idx + 1} of ${VERSES.length} pasukim${v.media_url ? '' : ' · no Sefaria recording'}`;
+}
+function stopAudio() {
+  if (audio) { audio.pause(); audio.src = ''; audio = null; }
+}
+function playFrom(i) {
+  stopAudio(); paused = false; idx = i;
+  highlight(i); updateBar();
+  btnPlay.innerHTML = '&#9646;&#9646;';
+  const v = VERSES[i];
+  if (!v.media_url) {
+    btnPlay.innerHTML = '&#9654;&#9654;';
+    setTimeout(() => { if (!paused) advance(); }, 1500);
+    return;
+  }
+  audio = new Audio(v.media_url);
+  audio.onended = advance;
+  audio.onerror = () => { console.warn('Audio error pasuk', v.num); advance(); };
+  audio.play().catch(advance);
+}
+function advance() {
+  if (paused) return;
+  if (idx < VERSES.length - 1) { playFrom(idx + 1); }
+  else {
+    stopAudio(); btnPlay.innerHTML = '&#9654;';
+    labelEl.textContent = 'Finished! Great job practicing this aliyah.';
+    progressEl.textContent = '';
+  }
+}
+function togglePlay() {
+  if (audio && !audio.paused) { audio.pause(); paused = true; btnPlay.innerHTML = '&#9654;'; }
+  else if (audio && audio.paused) { paused = false; audio.play(); btnPlay.innerHTML = '&#9646;&#9646;'; }
+  else { playFrom(idx); }
+}
+function go(delta) { const n = idx + delta; if (n >= 0 && n < VERSES.length) playFrom(n); }
+function jumpTo(i) { playFrom(i); }
+highlight(0); updateBar();
+
+
+// ══════════════════════════════════════════════════════
+// SECTION 2 — Student microphone recording
+// ══════════════════════════════════════════════════════
+let mediaRecorder = null;
+let recordedChunks = [];
+
+const btnStart    = document.getElementById('btn-start-rec');
+const btnStop     = document.getElementById('btn-stop-rec');
+const recDot      = document.getElementById('rec-dot');
+const recStatus   = document.getElementById('rec-status');
+const playbackArea= document.getElementById('playback-area');
+const playbackAud = document.getElementById('playback-audio');
+const uploadStatus= document.getElementById('upload-status');
+
+async function startRecording() {
+  // Ask browser for microphone access
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    recStatus.textContent = 'Microphone access denied. Please allow microphone access in your browser settings.';
+    return;
   }
 
-  function updateBar() {
-    const v = VERSES[idx];
-    // Show chapter:verse if available, otherwise sequential number
-    const label = (v.chapter && v.verse) ? `Pasuk ${v.chapter}:${v.verse}` : `Pasuk ${v.num}`;
-    labelEl.textContent    = label;
-    progressEl.textContent = `${idx + 1} of ${VERSES.length} pasukim${v.media_url ? '' : ' · no recording for this pasuk'}`;
+  recordedChunks = [];
+
+  // Use webm/opus if supported, otherwise let browser decide
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+    ? 'audio/webm;codecs=opus'
+    : 'audio/webm';
+
+  mediaRecorder = new MediaRecorder(stream, { mimeType });
+
+  mediaRecorder.ondataavailable = (e) => {
+    if (e.data.size > 0) recordedChunks.push(e.data);
+  };
+
+  mediaRecorder.onstop = () => {
+    // Stop all mic tracks so the browser mic indicator goes off
+    stream.getTracks().forEach(t => t.stop());
+
+    const blob = new Blob(recordedChunks, { type: mimeType });
+
+    // Show local playback immediately so student can hear themselves
+    const localUrl = URL.createObjectURL(blob);
+    playbackAud.src = localUrl;
+    playbackArea.style.display = 'block';
+
+    // Upload to server
+    uploadRecording(blob);
+  };
+
+  mediaRecorder.start();
+
+  // Update UI
+  btnStart.disabled        = true;
+  btnStop.disabled         = false;
+  recDot.classList.add('visible');
+  recStatus.textContent    = 'Recording in progress...';
+  uploadStatus.className   = 'upload-status';
+  uploadStatus.textContent = '';
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
   }
+  btnStart.disabled           = false;
+  btnStop.disabled            = true;
+  recDot.classList.remove('visible');
+  recStatus.textContent       = 'Recording stopped. Saving to your assignment...';
+}
 
-  function stopAudio() {
-    if (audio) { audio.pause(); audio.src = ''; audio = null; }
-  }
+async function uploadRecording(blob) {
+  if (!ASSIGNMENT_ID) return;
 
-  function playFrom(i) {
-    stopAudio();
-    paused = false;
-    idx    = i;
-    highlight(i);
-    updateBar();
-    btnPlay.innerHTML = '&#9646;&#9646;';  // pause icon
+  uploadStatus.className   = 'upload-status saving';
+  uploadStatus.textContent = 'Saving recording...';
 
-    const v = VERSES[i];
-    if (!v.media_url) {
-      // No recording for this pasuk — skip after a brief pause
-      btnPlay.innerHTML = '&#9654;&#9654;';
-      setTimeout(() => { if (!paused) advance(); }, 1500);
-      return;
-    }
+  const formData = new FormData();
+  formData.append('recording', blob, 'recording.webm');
 
-    audio = new Audio(v.media_url);
-    audio.onended = advance;
-    audio.onerror = () => {
-      // Recording exists in Sefaria metadata but file failed — skip gracefully
-      console.warn('Audio error for pasuk', v.num, v.media_url);
-      advance();
-    };
-    audio.play().catch(advance);
-  }
+  try {
+    const res  = await fetch(`/upload-recording/${ASSIGNMENT_ID}`, {
+      method: 'POST',
+      body:   formData,
+    });
+    const data = await res.json();
 
-  function advance() {
-    if (paused) return;
-    if (idx < VERSES.length - 1) {
-      playFrom(idx + 1);
+    if (data.success) {
+      uploadStatus.className   = 'upload-status saved';
+      uploadStatus.textContent = 'Recording saved! It will be visible to your teacher when you submit.';
+      recStatus.textContent    = 'Recording saved. You can record again to replace it.';
     } else {
-      stopAudio();
-      btnPlay.innerHTML  = '&#9654;';
-      labelEl.textContent    = 'Finished! Great job practicing this aliyah.';
-      progressEl.textContent = '';
+      throw new Error(data.error || 'Unknown error');
     }
+  } catch (err) {
+    uploadStatus.className   = 'upload-status error';
+    uploadStatus.textContent = 'Could not save recording: ' + err.message;
+    recStatus.textContent    = 'Save failed. Please try recording again.';
   }
-
-  function togglePlay() {
-    if (audio && !audio.paused) {
-      audio.pause(); paused = true; btnPlay.innerHTML = '&#9654;';
-    } else if (audio && audio.paused) {
-      paused = false; audio.play(); btnPlay.innerHTML = '&#9646;&#9646;';
-    } else {
-      playFrom(idx);
-    }
-  }
-
-  function go(delta) {
-    const n = idx + delta;
-    if (n >= 0 && n < VERSES.length) playFrom(n);
-  }
-
-  function jumpTo(i) { playFrom(i); }
-
-  // Init — highlight first verse
-  highlight(0);
-  updateBar();
+}
 </script>
 
 </body>

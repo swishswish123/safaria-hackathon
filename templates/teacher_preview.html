@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Preview: {{ assignment.title }} · ScroLein</title>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+  <style>
+    .back-btn {
+      display: flex; align-items: center; padding: 0 1.4rem;
+      color: var(--gold-lt); text-decoration: none;
+      font-family: 'EB Garamond', serif; font-size: 0.95rem;
+      letter-spacing: 0.04em; direction: ltr;
+    }
+    .back-btn:hover { color: white; }
+
+    /* Teacher preview banner — warm amber to distinguish from review */
+    .teacher-banner {
+      background: #3d2400;
+      border: 1px solid #d4a020;
+      border-radius: 8px;
+      padding: 16px 22px;
+      margin-bottom: 1.4rem;
+      direction: ltr;
+    }
+    .tb-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+    .tb-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #d4a020; margin-bottom: 3px; }
+    .tb-name  { color: white; font-family: 'Frank Ruhl Libre', serif; font-size: 1.1rem; font-weight: 700; }
+    .tb-meta  { color: #f0c060; font-size: 0.85rem; margin-top: 4px; }
+    .tb-notice {
+      margin-top: 10px; padding-top: 8px;
+      border-top: 1px solid rgba(212,160,32,0.4);
+      color: #f0c060; font-size: 0.82rem; font-style: italic; direction: ltr;
+    }
+    .tb-notice strong { color: #ffd570; }
+
+    /* Override player bar — warm amber for preview context */
+    .player-bar { background: #3d2400; border-top-color: #d4a020; }
+    .player-btn { background: #d4a020; color: #3d2400; }
+    .player-btn:hover { background: #b8880c; }
+    .player-verse-label { font-family: Arial, sans-serif; font-size: 0.9rem; }
+    .player-progress { color: #f0c060; }
+
+    .no-rec-badge {
+      display: inline-block; font-size: 0.65rem;
+      background: rgba(0,0,0,0.06); color: var(--muted);
+      border: 1px solid var(--rule); border-radius: 4px;
+      padding: 1px 6px; direction: ltr; vertical-align: middle; margin-left: 6px;
+    }
+    .has-recording .verse-text::before {
+      content: ''; display: inline-block;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--gold); margin-left: 0.5rem; vertical-align: middle;
+    }
+    .has-recording .verse-text::after { display: none; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <ul class="nav-links">
+    <a href="/teacher/student/{{ assignment.username }}" class="back-btn">← Back to {{ assignment.username }}'s Assignments</a>
+  </ul>
+  <div class="nav-brand">
+    <img src="/static/scrolein_logo_white.png" alt="ScroLein" style="height:40px; filter:brightness(0) invert(1); opacity:0.92;">
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- Teacher preview banner -->
+  <div class="teacher-banner">
+    <div class="tb-row">
+      <div>
+        <div class="tb-label">Previewing Assignment For</div>
+        <div class="tb-name">{{ assignment.username }}</div>
+        <div class="tb-meta">{{ assignment.title }} &nbsp;·&nbsp; {{ assignment.parasha }} &nbsp;·&nbsp; {{ assignment.aliyah }}</div>
+      </div>
+      {% if assignment.due_date %}
+      <div style="text-align:right; direction:ltr;">
+        <div class="tb-label">Due Date</div>
+        <div style="color: #f0c060; font-size: 0.9rem;">{{ assignment.due_date }}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% if assignment.notes %}
+    <div class="tb-notice">Teacher note: {{ assignment.notes }}</div>
+    {% endif %}
+    <div class="tb-notice">
+      <strong>This is what {{ assignment.username }} will see when they open this assignment.</strong>
+      The Sefaria audio below is the cantillation guide — the student's own recording will appear here once submitted.
+    </div>
+  </div>
+
+  <!-- Parasha header -->
+  <div class="parasha-header">
+    <h1>{{ name }}</h1>
+    <div class="ref-tag" style="direction:ltr;">{{ ref }}</div>
+    <div class="legend" style="direction:ltr;">
+      <span class="dot"></span> Gold dot = Sefaria cantillation recording available &nbsp;·&nbsp;
+      <strong>{{ verses | length }}</strong> pasukim in this aliyah
+    </div>
+  </div>
+
+  <script>
+    const VERSES = {{ verses | tojson }};
+  </script>
+
+  <ul class="verse-list" id="verse-list">
+    {% for v in verses %}
+    <li class="verse-item {% if v.media_url %}has-recording{% endif %}"
+        id="verse-{{ v.num }}"
+        onclick="jumpTo({{ loop.index0 }})">
+      <div class="verse-row">
+        <span class="verse-num" style="direction:ltr;">
+          {% if v.chapter is defined and v.verse is defined %}
+            {{ v.chapter }}:{{ v.verse }}
+          {% else %}
+            {{ v.num }}
+          {% endif %}
+        </span>
+        <span class="verse-text">
+          {% if not v.media_url %}<span class="no-rec-badge">no audio</span>{% endif %}
+          {{ v.text }}
+        </span>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <!-- Sticky player — plays Sefaria per-verse cantillation -->
+  <div class="player-bar">
+    <button class="player-btn" id="btn-prev" onclick="go(-1)" title="Previous">&#9664;</button>
+    <button class="player-btn" id="btn-play" onclick="togglePlay()" title="Play/Pause">&#9654;</button>
+    <button class="player-btn" id="btn-next" onclick="go(+1)" title="Next">&#9654;&#9654;</button>
+    <div class="player-info">
+      <div class="player-verse-label" id="player-label">Click a pasuk or press Play — Sefaria cantillation</div>
+      <div class="player-progress"    id="player-progress"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let idx = 0, audio = null, paused = false;
+  const btnPlay = document.getElementById('btn-play');
+  const labelEl = document.getElementById('player-label');
+  const progressEl = document.getElementById('player-progress');
+
+  function highlight(i) {
+    document.querySelectorAll('.verse-item').forEach(el => el.classList.remove('active'));
+    const li = document.getElementById('verse-' + VERSES[i].num);
+    if (li) { li.classList.add('active'); li.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  }
+  function updateBar() {
+    const v = VERSES[idx];
+    const label = (v.chapter && v.verse) ? `Pasuk ${v.chapter}:${v.verse}` : `Pasuk ${v.num}`;
+    labelEl.textContent    = label;
+    progressEl.textContent = `${idx + 1} of ${VERSES.length} pasukim${v.media_url ? '' : ' · no Sefaria recording'}`;
+  }
+  function stopAudio() {
+    if (audio) { audio.pause(); audio.src = ''; audio = null; }
+  }
+  function playFrom(i) {
+    stopAudio(); paused = false; idx = i; highlight(i); updateBar();
+    btnPlay.innerHTML = '&#9646;&#9646;';
+    const v = VERSES[i];
+    if (!v.media_url) { btnPlay.innerHTML = '&#9654;&#9654;'; setTimeout(() => { if (!paused) advance(); }, 1500); return; }
+    audio = new Audio(v.media_url);
+    audio.onended = advance;
+    audio.onerror = () => advance();
+    audio.play().catch(advance);
+  }
+  function advance() {
+    if (paused) return;
+    if (idx < VERSES.length - 1) { playFrom(idx + 1); }
+    else { stopAudio(); btnPlay.innerHTML = '&#9654;'; labelEl.textContent = 'End of aliyah.'; progressEl.textContent = ''; }
+  }
+  function togglePlay() {
+    if (audio && !audio.paused) { audio.pause(); paused = true; btnPlay.innerHTML = '&#9654;'; }
+    else if (audio && audio.paused) { paused = false; audio.play(); btnPlay.innerHTML = '&#9646;&#9646;'; }
+    else { playFrom(idx); }
+  }
+  function go(delta) { const n = idx + delta; if (n >= 0 && n < VERSES.length) playFrom(n); }
+  function jumpTo(i) { playFrom(i); }
+  highlight(0); updateBar();
+</script>
+</body>
+</html>

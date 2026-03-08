@@ -1,4 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory
+import os
+from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import random, string, re, requests
@@ -8,6 +10,8 @@ app = Flask(__name__)
 app.secret_key = "leining_secret_123"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["RECORDING_FOLDER"] = os.path.join(os.path.dirname(__file__), "static", "recordings")
+os.makedirs(app.config["RECORDING_FOLDER"], exist_ok=True)
 db = SQLAlchemy(app)
 
 
@@ -40,7 +44,8 @@ class Assignment(db.Model):
     submitted_at = db.Column(db.DateTime, nullable=True)
     notes        = db.Column(db.Text, nullable=True)
     assigned_by  = db.Column(db.String(80), nullable=True)
-    sefaria_ref  = db.Column(db.String(200), nullable=True)  # e.g. "Genesis 6:9-11:32"
+    sefaria_ref        = db.Column(db.String(200), nullable=True)  # e.g. "Genesis 6:9-11:32"
+    recording_filename = db.Column(db.String(200), nullable=True)  # student's uploaded recording
 
 
 # ================================================================== SEFARIA HELPERS
@@ -564,6 +569,130 @@ def read_assignment(assignment_id):
         verses     = verses,
         assignment = assignment
     )
+
+
+# ------------------------------------------------------------------ TEACHER: VIEW STUDENT'S ASSIGNMENTS
+@app.route("/teacher/student/<student_username>")
+def teacher_student_view(student_username):
+    username = session.get("username")
+    if not username: return redirect(url_for("home"))
+    teacher = User.query.filter_by(username=username, role="teacher").first()
+    if not teacher: return redirect(url_for("dashboard"))
+
+    # Confirm this student is actually in the teacher's class
+    student = User.query.filter_by(username=student_username, role="student").first()
+    if not student: return redirect(url_for("teacher_dashboard"))
+
+    submitted = Assignment.query.filter_by(username=student_username, assigned_by=username, submitted=True).all()
+    assigned  = Assignment.query.filter_by(username=student_username, assigned_by=username, submitted=False).all()
+
+    return render_template("teacher_student_view.html",
+        student_username = student_username,
+        submitted        = submitted,
+        assigned         = assigned,
+        submitted_count  = len(submitted),
+        assigned_count   = len(assigned),
+        total_count      = len(submitted) + len(assigned),
+    )
+
+
+# ------------------------------------------------------------------ TEACHER: PREVIEW UNSUBMITTED ASSIGNMENT
+@app.route("/teacher/preview/<int:assignment_id>")
+def teacher_preview(assignment_id):
+    username = session.get("username")
+    if not username: return redirect(url_for("home"))
+    teacher = User.query.filter_by(username=username, role="teacher").first()
+    if not teacher: return redirect(url_for("dashboard"))
+
+    assignment = Assignment.query.get(assignment_id)
+    if not assignment: return redirect(url_for("teacher_dashboard"))
+
+    ref = assignment.sefaria_ref
+    if not ref:
+        return redirect(url_for("teacher_student_view", student_username=assignment.username))
+
+    aliyah_idx  = ALIYAH_INDEX.get(assignment.aliyah)
+    aliyot_refs = fetch_parasha_aliyot(assignment.parasha)
+
+    if aliyah_idx is not None and aliyot_refs and aliyah_idx < len(aliyot_refs):
+        aliyah_ref = aliyot_refs[aliyah_idx]
+        verses, _  = get_section_data(aliyah_ref, [])
+    else:
+        verses, _  = get_section_data(ref, [])
+
+    return render_template("teacher_preview.html",
+        assignment = assignment,
+        name       = assignment.title,
+        ref        = ref,
+        verses     = verses,
+    )
+
+
+# ------------------------------------------------------------------ TEACHER: REVIEW STUDENT RECORDING
+@app.route("/teacher/review/<int:assignment_id>")
+def teacher_review(assignment_id):
+    username = session.get("username")
+    if not username: return redirect(url_for("home"))
+    teacher = User.query.filter_by(username=username, role="teacher").first()
+    if not teacher: return redirect(url_for("dashboard"))
+
+    assignment = Assignment.query.get(assignment_id)
+    if not assignment: return redirect(url_for("teacher_dashboard"))
+
+    # Guard: only accessible if submitted AND has a recording
+    if not assignment.submitted or not assignment.recording_filename:
+        return redirect(url_for("teacher_student_view", student_username=assignment.username))
+
+    # Fetch the Hebrew text for the assigned aliyah (same logic as student read_assignment)
+    ref = assignment.sefaria_ref
+    if not ref:
+        return redirect(url_for("teacher_student_view", student_username=assignment.username))
+
+    aliyah_idx  = ALIYAH_INDEX.get(assignment.aliyah)
+    aliyot_refs = fetch_parasha_aliyot(assignment.parasha)
+
+    if aliyah_idx is not None and aliyot_refs and aliyah_idx < len(aliyot_refs):
+        aliyah_ref = aliyot_refs[aliyah_idx]
+        verses, _  = get_section_data(aliyah_ref, [])
+    else:
+        verses, _  = get_section_data(ref, [])
+
+    return render_template("teacher_review.html",
+        assignment = assignment,
+        name       = assignment.title,
+        ref        = ref,
+        verses     = verses,
+    )
+
+# ------------------------------------------------------------------ UPLOAD RECORDING
+@app.route("/upload-recording/<int:assignment_id>", methods=["POST"])
+def upload_recording(assignment_id):
+    username = session.get("username")
+    if not username:
+        return jsonify({"error": "Not logged in"}), 401
+
+    assignment = Assignment.query.get(assignment_id)
+    if not assignment or assignment.username != username:
+        return jsonify({"error": "Not authorized"}), 403
+
+    if "recording" not in request.files:
+        return jsonify({"error": "No file received"}), 400
+
+    file = request.files["recording"]
+    if file.filename == "":
+        return jsonify({"error": "Empty filename"}), 400
+
+    # Save as assignment_<id>_<username>.webm (overwrite if re-recorded)
+    filename = f"assignment_{assignment_id}_{secure_filename(username)}.webm"
+    filepath = os.path.join(app.config["RECORDING_FOLDER"], filename)
+    file.save(filepath)
+
+    # Store filename on the assignment
+    assignment.recording_filename = filename
+    db.session.commit()
+
+    return jsonify({"success": True, "filename": filename})
+
 
 # ------------------------------------------------------------------ SUBMIT / UNSUBMIT / EDIT
 @app.route("/submit/<int:assignment_id>", methods=["POST"])

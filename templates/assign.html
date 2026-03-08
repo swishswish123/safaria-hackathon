@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Assign Work – Leining App</title>
+    <title>Assign Work – ScroLein</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: Arial, sans-serif; background-color: #f5f0e8; min-height: 100vh; }
@@ -16,6 +16,7 @@
             align-items: center;
         }
         nav h1 { font-size: 20px; }
+        .nav-logo { height: 44px; filter: brightness(0) invert(1); opacity: 0.92; }
         .btn-back { padding: 8px 16px; background-color: rgba(255,255,255,0.2); color: white; border-radius: 5px; text-decoration: none; font-size: 14px; }
         .btn-back:hover { background-color: rgba(255,255,255,0.35); }
 
@@ -84,6 +85,16 @@
 
         .badge-done    { display: inline-block; padding: 2px 8px; background: #eafaf1; color: #1e8449; border-radius: 10px; font-size: 11px; font-weight: bold; margin-left: 6px; }
         .badge-pending { display: inline-block; padding: 2px 8px; background: #fef9e7; color: #d68910; border-radius: 10px; font-size: 11px; font-weight: bold; margin-left: 6px; }
+        .recording-player {
+            margin-top: 10px;
+            background: #f0f4f8;
+            border-left: 3px solid #6c3483;
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+        .recording-label { font-size: 12px; color: #6c3483; font-weight: bold; display: block; margin-bottom: 5px; }
+        .recording-player audio { width: 100%; }
+        .badge-recorded { display: inline-block; padding: 2px 8px; background: #f0f4f8; color: #6c3483; border-radius: 10px; font-size: 11px; font-weight: bold; margin-left: 6px; border: 1px solid #8e44ad; }
         .empty-msg { color: #bbb; font-style: italic; font-size: 13px; }
     </style>
 </head>
@@ -177,9 +188,18 @@
                         {% else %}
                             <span class="badge-pending">Pending</span>
                         {% endif %}
+                        {% if a.recording_filename %}
+                            <span class="badge-recorded">Has Recording</span>
+                        {% endif %}
                     </div>
                     <div class="ameta">{{ a.parasha }} · {{ a.aliyah }} · Due: {{ a.due_date or "No date set" }}</div>
                     {% if a.notes %}<div class="ameta" style="margin-top:3px; font-style:italic;">{{ a.notes }}</div>{% endif %}
+                    {% if a.recording_filename and a.submitted %}
+                    <div class="recording-player">
+                        <span class="recording-label">Student recording:</span>
+                        <audio controls src="/static/recordings/{{ a.recording_filename }}"></audio>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endfor %}
             {% else %}
