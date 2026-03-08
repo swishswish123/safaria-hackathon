@@ -372,11 +372,10 @@ function autoSave() {
 
 async function doSave() {
   try {
-    const note = document.getElementById('feedback-note')?.value.trim() || '';
     await fetch(`/teacher/save-grades/${ASSIGNMENT_ID}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ grades, feedback_note: note })
+      body: JSON.stringify({ grades })
     });
     showToast('Progress saved');
   } catch(e) { /* silent */ }
@@ -393,18 +392,9 @@ function showToast(msg) {
 // Finish Later
 // ══════════════════════════════════════════════
 async function finishLater() {
-  try {
-    const note = document.getElementById('feedback-note')?.value.trim() || '';
-    await fetch(`/teacher/save-grades/${ASSIGNMENT_ID}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ grades, feedback_note: note })
-    });
-    showToast('Saved — redirecting...');
-    setTimeout(() => { window.location.href = '/teacher/dashboard'; }, 900);
-  } catch(e) {
-    showToast('Save failed — please try again');
-  }
+  await doSave();
+  showToast('Saved — redirecting...');
+  setTimeout(() => { window.location.href = '/teacher/dashboard'; }, 900);
 }
 
 // ══════════════════════════════════════════════

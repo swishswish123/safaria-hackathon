@@ -10,17 +10,17 @@
         nav {
             background-color: #6c3483;
             color: white;
-            padding: 12px 32px;
+            padding: 16px 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .nav-logo { height: 44px; filter: brightness(0) invert(1); opacity: 0.92; }
+        nav h1 { font-size: 20px; }
         .btn-back { padding: 8px 16px; background-color: rgba(255,255,255,0.2); color: white; border-radius: 5px; text-decoration: none; font-size: 14px; }
         .btn-back:hover { background-color: rgba(255,255,255,0.35); }
 
         .container {
-            max-width: 820px;
+            max-width: 860px;
             margin: 40px auto;
             padding: 0 24px;
             display: grid;
@@ -51,20 +51,68 @@
         }
         input:focus, select:focus, textarea:focus { border-color: #8e44ad; outline: none; }
         select { cursor: pointer; }
-        select:disabled { background-color: #f5f5f5; color: #aaa; cursor: not-allowed; }
         textarea { height: 90px; resize: vertical; }
-        .nested-selects { display: flex; flex-direction: column; gap: 8px; }
+
+        /* Step 1 sefer picker */
+        .sefer-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .sefer-btn {
+            padding: 10px 6px;
+            background: #f5f0e8;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #5b2c6f;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s;
+        }
+        .sefer-btn:hover  { background: #ece3f5; border-color: #8e44ad; }
+        .sefer-btn.active { background: #6c3483; color: white; border-color: #6c3483; }
 
         .btn-submit {
-            width: 100%; padding: 13px;
-            background-color: #6c3483; color: white;
-            border: none; border-radius: 6px;
-            font-size: 16px; cursor: pointer; margin-top: 6px;
+            width: 100%;
+            padding: 13px;
+            background-color: #6c3483;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 6px;
         }
         .btn-submit:hover { background-color: #5b2c6f; }
+        .btn-ghost {
+            width: 100%;
+            padding: 10px;
+            background: white;
+            color: #6c3483;
+            border: 2px solid #6c3483;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .btn-ghost:hover { background: #f5f0e8; }
+
+        .step-label {
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #8e44ad;
+            margin-bottom: 8px;
+        }
+        .divider { border: none; border-top: 1px solid #eee; margin: 18px 0; }
 
         .error-box { background: #fdf0ef; border: 1.5px solid #e74c3c; border-radius: 6px; padding: 10px 14px; color: #c0392b; font-size: 13px; margin-bottom: 14px; }
 
+        /* Right panel */
         .section-title { font-size: 16px; font-weight: bold; color: #6c3483; margin-bottom: 12px; border-bottom: 2px solid #8e44ad; padding-bottom: 6px; }
         .assign-item { padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #444; }
         .assign-item:last-child { border-bottom: none; }
@@ -73,112 +121,155 @@
         .badge-done    { display: inline-block; padding: 2px 8px; background: #eafaf1; color: #1e8449; border-radius: 10px; font-size: 11px; font-weight: bold; margin-left: 6px; }
         .badge-pending { display: inline-block; padding: 2px 8px; background: #fef9e7; color: #d68910; border-radius: 10px; font-size: 11px; font-weight: bold; margin-left: 6px; }
         .badge-recorded { display: inline-block; padding: 2px 8px; background: #f0f4f8; color: #6c3483; border-radius: 10px; font-size: 11px; font-weight: bold; margin-left: 6px; border: 1px solid #8e44ad; }
-        .recording-player { margin-top: 10px; background: #f0f4f8; border-left: 3px solid #6c3483; padding: 8px 12px; border-radius: 4px; }
-        .recording-label { font-size: 12px; color: #6c3483; font-weight: bold; display: block; margin-bottom: 5px; }
-        .recording-player audio { width: 100%; }
         .empty-msg { color: #bbb; font-style: italic; font-size: 13px; }
 
-        .own-nusach-hint { display:none; margin-top:8px; padding:10px 12px; background:#fff8e7; border-left:3px solid #d4a020; border-radius:4px; font-size:13px; color:#7a5000; }
+        .radio-group { display: flex; flex-direction: column; gap: 8px; }
+        .radio-label {
+            display: flex; flex-direction: column; gap: 2px;
+            padding: 10px 14px; border: 1.5px solid #ddd; border-radius: 8px;
+            cursor: pointer; transition: border-color 0.15s, background 0.15s;
+        }
+        .radio-label:hover { border-color: #8e44ad; background: #faf5ff; }
+        .radio-label input[type="radio"] { display: none; }
+        .radio-label:has(input:checked) { border-color: #6c3483; background: #f5eeff; }
+        .radio-label > span:first-of-type { font-weight: bold; color: #2c3e50; font-size: 14px; }
+        .radio-hint { font-size: 12px; color: #999; margin-left: 0; }
+        .radio-label:has(input:checked) > span:first-of-type { color: #6c3483; }
 
-        /* Sefaria preview panel */
-        .preview-panel { display:none; margin:0 24px 24px; background:white; border-radius:12px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.1); direction:rtl; }
-        .preview-header { direction:ltr; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
 
-        /* Redirect modal */
-        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:200; justify-content:center; align-items:center; }
-        .modal-overlay.active { display:flex; }
-        .modal-box { background:white; border-radius:14px; padding:40px 44px; max-width:420px; width:90%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.25); }
-        .modal-box h2 { color:#2c3e50; font-size:20px; margin-bottom:10px; }
-        .modal-box p  { color:#666; font-size:14px; line-height:1.6; margin-bottom:28px; }
-        .modal-btns { display:flex; gap:12px; justify-content:center; }
-        .btn-modal-back { padding:10px 22px; background:#eee; border:none; border-radius:6px; font-size:15px; cursor:pointer; color:#555; }
-        .btn-modal-continue { padding:10px 26px; background:#6c3483; color:white; border:none; border-radius:6px; font-size:15px; font-weight:bold; cursor:pointer; }
-        .btn-modal-continue:hover { background:#5b2c6f; }
+        .selected-summary {
+            background: #f0eaf8;
+            border: 1.5px solid #8e44ad;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            color: #5b2c6f;
+            margin-bottom: 16px;
+        }
+        .selected-summary strong { display: block; font-size: 15px; margin-bottom: 2px; }
     </style>
 </head>
 <body>
 
 <nav>
-    <img src="/static/scrolein_logo_white.png" alt="ScroLein" class="nav-logo">
+    <h1>Assign Work to {{ student.username }}</h1>
     <a href="/teacher/dashboard" class="btn-back">Back to Dashboard</a>
 </nav>
 
 <div class="container">
 
-    <!-- LEFT: Assignment form -->
+    <!-- ── LEFT: Assignment form ── -->
     <div class="card">
-        <h2>Assign to {{ student.username }}</h2>
-        <p class="subtitle">Fill in the details to assign a reading.</p>
+        <h2>New Assignment</h2>
+        <p class="subtitle">Assign a reading to {{ student.username }}.</p>
 
         {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
 
-        <form method="POST" id="assign-form">
+        <!-- ═══ STEP 1: Pick a Sefer (GET form, reloads page) ═══ -->
+        {% if not selected_sefer %}
+        <div class="step-label">Step 1 — Choose a Sefer</div>
+        <form method="GET">
+            <div class="sefer-grid">
+                {% for sefer in sfarim %}
+                <button type="submit" name="sefer" value="{{ sefer }}"
+                        class="sefer-btn {% if sefer == selected_sefer %}active{% endif %}">
+                    {{ sefer }}
+                </button>
+                {% endfor %}
+            </div>
+        </form>
 
+        {% else %}
+
+        <!-- ═══ STEP 2: Full form with sefer locked in ═══ -->
+
+        <!-- Show which sefer is selected, with change link -->
+        <div class="selected-summary">
+            <strong>Sefer: {{ selected_sefer }}</strong>
+            <a href="/teacher/assign/{{ student.username }}" style="font-size:12px; color:#8e44ad;">Change</a>
+        </div>
+
+        <form method="POST">
+            <!-- Carry sefer through -->
+            <input type="hidden" name="sefer" value="{{ selected_sefer }}" />
+
+            <!-- Assignment Title -->
             <div class="field">
                 <label for="title">Assignment Title</label>
-                <input type="text" id="title" name="title" placeholder="e.g. Bar Mitzvah Parsha Reading" required />
+                <input type="text" id="title" name="title"
+                       placeholder="e.g. Bar Mitzvah Parsha Reading"
+                       value="{{ request.form.get('title', '') }}" required />
             </div>
 
+            <!-- Parasha dropdown — server-populated from library -->
             <div class="field">
-                <label>Parsha</label>
-                <input type="hidden" id="parasha" name="parasha" />
-                <div class="nested-selects">
-                    <select id="sefer-select" onchange="loadParshiot()">
-                        <option value="">-- Select a Sefer --</option>
-                        <option value="Bereishit">Bereishit</option>
-                        <option value="Shemot">Shemot</option>
-                        <option value="Vayikra">Vayikra</option>
-                        <option value="Bamidbar">Bamidbar</option>
-                        <option value="Devarim">Devarim</option>
-                    </select>
-                    <select id="parsha-select" onchange="setParasha()" disabled>
-                        <option value="">-- Select a Parsha --</option>
-                    </select>
-                </div>
+                <label for="parasha">Parasha</label>
+                <select id="parasha" name="parasha" required>
+                    <option value="">-- Select a Parasha --</option>
+                    {% for p in parshiot %}
+                    <option value="{{ p }}" {% if p == selected_parsha %}selected{% endif %}>
+                        {{ p }}
+                    </option>
+                    {% endfor %}
+                </select>
             </div>
 
+            <!-- Aliyah -->
             <div class="field">
                 <label for="aliyah">Aliyah</label>
                 <select id="aliyah" name="aliyah" required>
                     <option value="">-- Select an Aliyah --</option>
-                    <option>First Aliyah</option>
-                    <option>Second Aliyah</option>
-                    <option>Third Aliyah</option>
-                    <option>Fourth Aliyah</option>
-                    <option>Fifth Aliyah</option>
-                    <option>Sixth Aliyah</option>
-                    <option>Seventh Aliyah</option>
-                    <option>Maftir</option>
-                    <option>Haftorah</option>
+                    {% for label in aliyah_labels %}
+                    <option value="{{ label }}" {% if request.form.get('aliyah') == label %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
                 </select>
             </div>
 
+            <!-- Due Date -->
             <div class="field">
                 <label for="due_date">Due Date</label>
-                <input type="date" id="due_date" name="due_date" />
+                <input type="date" id="due_date" name="due_date"
+                       value="{{ request.form.get('due_date', '') }}" />
             </div>
 
+            <!-- Notes -->
             <div class="field">
-                <label for="recording_choice">Cantillation Recording</label>
-                <select id="recording_choice" name="recording_choice" onchange="onRecordingChoiceChange()">
-                    <option value="included">Use included recording (Ashkenazi)</option>
-                    <option value="own">Record your own Nusach</option>
-                </select>
-                <div class="own-nusach-hint" id="own-nusach-hint">
-                    After clicking "Assign", you'll be taken to a recording page where you can sing the text in your own nusach for this student.
+                <label for="notes">Notes</label>
+                <textarea id="notes" name="notes"
+                          placeholder="Any instructions or context for the student...">{{ request.form.get('notes', '') }}</textarea>
+            </div>
+
+            <!-- Recording option -->
+            <div class="field">
+                <label>Teacher Nusach Recording</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="recording_choice" value="included" checked>
+                        <span>Use Sefaria reference audio</span>
+                        <span class="radio-hint">Student hears the standard Sefaria cantillation</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="recording_choice" value="own">
+                        <span>Record my own nusach</span>
+                        <span class="radio-hint">You'll record your singing after creating this assignment</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="recording_choice" value="none">
+                        <span>No reference recording</span>
+                        <span class="radio-hint">Text only, no audio guide</span>
+                    </label>
                 </div>
             </div>
 
-            <div class="field">
-                <label for="notes">Notes</label>
-                <textarea id="notes" name="notes" placeholder="Any instructions or context for the student..."></textarea>
-            </div>
-
-            <button type="button" class="btn-submit" onclick="handleAssignClick()">Assign</button>
+            <button type="submit" class="btn-submit">Assign</button>
         </form>
+
+        {% endif %}
     </div>
 
-    <!-- RIGHT: Existing assignments -->
+    <!-- ── RIGHT: Existing assignments ── -->
     <div class="card">
         <div class="section-title">Current Assignments</div>
         {% if existing %}
@@ -192,12 +283,6 @@
                 </div>
                 <div class="ameta">{{ a.parasha }} · {{ a.aliyah }} · Due: {{ a.due_date or "No date set" }}</div>
                 {% if a.notes %}<div class="ameta" style="margin-top:3px; font-style:italic;">{{ a.notes }}</div>{% endif %}
-                {% if a.recording_filename and a.submitted %}
-                <div class="recording-player">
-                    <span class="recording-label">Student recording:</span>
-                    <audio controls src="/static/recordings/{{ a.recording_filename }}"></audio>
-                </div>
-                {% endif %}
             </div>
             {% endfor %}
         {% else %}
@@ -206,128 +291,6 @@
     </div>
 
 </div>
-
-<!-- Sefaria live preview panel -->
-<div class="preview-panel" id="preview-panel">
-    <div class="preview-header">
-        <strong style="color:#6c3483; font-size:15px;">Sefaria Text Preview</strong>
-        <span id="preview-ref" style="font-size:12px; color:#999; font-style:italic;"></span>
-    </div>
-    <div id="preview-verses" style="font-family:'Frank Ruhl Libre', serif; font-size:1.2rem; line-height:2; color:#12100e;"></div>
-    <div id="preview-note"   style="direction:ltr; font-size:12px; color:#aaa; margin-top:8px; font-style:italic;"></div>
-    <div id="preview-loading" style="direction:ltr; color:#999; font-size:13px; display:none;">Loading verses from Sefaria...</div>
-</div>
-
-<!-- Redirect modal for "Record your own Nusach" -->
-<div class="modal-overlay" id="record-modal-overlay">
-    <div class="modal-box">
-        <div style="font-size:40px; margin-bottom:14px;">🎙️</div>
-        <h2>Record Your Nusach</h2>
-        <p>Since you chose <strong>"Record your own Nusach"</strong>, you'll now be taken to a recording page with the full text of this aliyah.<br><br>Your recording will replace the standard Ashkenazi cantillation for this student's assignment.</p>
-        <div class="modal-btns">
-            <button class="btn-modal-back" onclick="closeRecordModal()">Go Back</button>
-            <button class="btn-modal-continue" onclick="submitFormNow()">Continue →</button>
-        </div>
-    </div>
-</div>
-
-<script>
-    const parshiot = {
-        "Bereishit": ["Bereishit","Noach","Lech Lecha","Vayeira","Chayei Sarah","Toldot","Vayeitzei","Vayishlach","Vayeishev","Mikeitz","Vayigash","Vayechi"],
-        "Shemot":   ["Shemot","Vaeira","Bo","Beshalach","Yitro","Mishpatim","Terumah","Tetzaveh","Ki Tisa","Vayakhel","Pekudei"],
-        "Vayikra":  ["Vayikra","Tzav","Shemini","Tazria","Metzora","Acharei Mot","Kedoshim","Emor","Behar","Bechukotai"],
-        "Bamidbar": ["Bamidbar","Naso","Behaalotecha","Shelach","Korach","Chukat","Balak","Pinchas","Matot","Masei"],
-        "Devarim":  ["Devarim","Vaetchanan","Eikev","Re'eh","Shoftim","Ki Teitzei","Ki Tavo","Nitzavim","Vayeilech","Haazinu","Vezot HaBerachah"]
-    };
-
-    function loadParshiot() {
-        const sefer = document.getElementById("sefer-select").value;
-        const parshaSelect = document.getElementById("parsha-select");
-        parshaSelect.innerHTML = '<option value="">-- Select a Parsha --</option>';
-        document.getElementById("parasha").value = "";
-        if (!sefer) { parshaSelect.disabled = true; return; }
-        parshiot[sefer].forEach(p => {
-            const opt = document.createElement("option");
-            opt.value = opt.textContent = p;
-            parshaSelect.appendChild(opt);
-        });
-        parshaSelect.disabled = false;
-    }
-
-    function setParasha() {
-        document.getElementById("parasha").value = document.getElementById("parsha-select").value;
-        loadPreview();
-    }
-
-    document.getElementById("aliyah").addEventListener("change", loadPreview);
-
-    function loadPreview() {
-        const parasha = document.getElementById("parasha").value;
-        const aliyah  = document.getElementById("aliyah").value;
-        if (!parasha || !aliyah) return;
-        const panel    = document.getElementById("preview-panel");
-        const loading  = document.getElementById("preview-loading");
-        const versesEl = document.getElementById("preview-verses");
-        const refEl    = document.getElementById("preview-ref");
-        const noteEl   = document.getElementById("preview-note");
-        panel.style.display = "block";
-        loading.style.display = "block";
-        versesEl.innerHTML = ""; refEl.textContent = ""; noteEl.textContent = "";
-        fetch(`/api/sefaria-preview?parasha=${encodeURIComponent(parasha)}&aliyah=${encodeURIComponent(aliyah)}`)
-            .then(r => r.json())
-            .then(data => {
-                loading.style.display = "none";
-                if (data.error) { versesEl.innerHTML = `<span style="color:#c0392b;direction:ltr;">${data.error}</span>`; return; }
-                refEl.textContent = data.ref;
-                if (data.note) noteEl.textContent = data.note;
-                if (data.verses && data.verses.length) {
-                    versesEl.innerHTML = data.verses.map(v =>
-                        `<div style="border-bottom:1px solid rgba(184,136,12,0.2);padding:6px 0;">
-                            <span style="font-size:0.7rem;color:#7a6a50;direction:ltr;display:inline-block;min-width:24px;">${v.num}</span>
-                            ${v.text}
-                        </div>`
-                    ).join("") + `<div style="direction:ltr;font-size:12px;color:#aaa;margin-top:6px;">Showing first ${data.verses.length} verses — full text visible to student.</div>`;
-                } else {
-                    versesEl.innerHTML = '<span style="color:#aaa;font-size:13px;direction:ltr;">Preview unavailable for this selection.</span>';
-                }
-            })
-            .catch(() => {
-                loading.style.display = "none";
-                versesEl.innerHTML = '<span style="color:#c0392b;font-size:13px;direction:ltr;">Could not reach Sefaria.</span>';
-            });
-    }
-
-    function onRecordingChoiceChange() {
-        const choice = document.getElementById("recording_choice").value;
-        document.getElementById("own-nusach-hint").style.display = choice === "own" ? "block" : "none";
-    }
-
-    function handleAssignClick() {
-        const title   = document.getElementById("title").value.trim();
-        const parasha = document.getElementById("parasha").value;
-        const aliyah  = document.getElementById("aliyah").value;
-        if (!title)   { alert("Please enter an Assignment Title."); return; }
-        if (!parasha) { alert("Please select both a Sefer and a Parsha."); return; }
-        if (!aliyah)  { alert("Please select an Aliyah."); return; }
-        if (document.getElementById("recording_choice").value === "own") {
-            document.getElementById("record-modal-overlay").classList.add("active");
-        } else {
-            document.getElementById("assign-form").submit();
-        }
-    }
-
-    function closeRecordModal() {
-        document.getElementById("record-modal-overlay").classList.remove("active");
-    }
-
-    function submitFormNow() {
-        document.getElementById("assign-form").submit();
-    }
-
-    document.getElementById("record-modal-overlay").addEventListener("click", function(e) {
-        if (e.target === this) closeRecordModal();
-    });
-</script>
 
 </body>
 </html>

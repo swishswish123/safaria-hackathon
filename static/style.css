@@ -1,9 +1,3 @@
-/* ════════════════════════════════════════════
-   style.css  —  ScroLein shared base
-   Nav, verse list, player bar, modal overlay,
-   save-toast. Loaded by every page.
-════════════════════════════════════════════ */
-
 /* ── Variables ── */
 :root {
   --ink:       #12100e;
@@ -40,29 +34,36 @@ nav {
 }
 .nav-brand {
   font-family: 'Frank Ruhl Libre', serif;
-  font-weight: 900; font-size: 1.25rem;
+  font-weight: 900;
+  font-size: 1.25rem;
   color: var(--parchment);
-  display: flex; align-items: center;
-  margin-left: auto; padding-left: 2rem;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding-left: 2rem;
   letter-spacing: 0.03em;
 }
 .nav-brand span { color: var(--gold-lt); margin-right: 0.4rem; }
 .nav-links { display: flex; align-items: stretch; list-style: none; }
-.nav-links a, .nav-back {
-  display: flex; align-items: center;
-  padding: 0 1.4rem; color: var(--parchment);
-  text-decoration: none; font-family: 'EB Garamond', serif;
-  font-size: 1rem; letter-spacing: 0.04em;
-  border-bottom: 3px solid transparent; margin-bottom: -3px;
-  transition: color 0.15s, border-color 0.15s; direction: ltr;
+.nav-links a {
+  display: flex;
+  align-items: center;
+  padding: 0 1.4rem;
+  color: var(--parchment);
+  text-decoration: none;
+  font-family: 'EB Garamond', serif;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -3px;
+  transition: color 0.15s, border-color 0.15s;
 }
-.nav-links a:hover, .nav-back:hover { color: var(--gold-lt); border-bottom-color: var(--gold-lt); }
-.nav-logo { height: 40px; filter: brightness(0) invert(1); opacity: 0.92; }
+.nav-links a:hover { color: var(--gold-lt); border-bottom-color: var(--gold-lt); }
 
 /* ── Page wrapper ── */
 .page { max-width: 860px; margin: 0 auto; padding: 3rem 2rem 8rem; }
 
-/* ── Parasha header ── */
+/* ── Parasha: header ── */
 .parasha-header { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid var(--rule); }
 .parasha-header h1 { font-family: 'Frank Ruhl Libre', serif; font-size: 2.2rem; font-weight: 900; color: var(--navy); }
 .parasha-header .ref-tag { font-size: 0.85rem; color: var(--muted); font-style: italic; direction: ltr; display: inline-block; margin-top: 0.25rem; }
@@ -71,41 +72,65 @@ nav {
 
 /* ── Verse list ── */
 .verse-list { list-style: none; }
-.verse-item { border-bottom: 1px solid var(--rule); }
+.verse-item { border-bottom: 1px solid var(--rule); cursor: pointer; }
 .verse-item:first-child { border-top: 1px solid var(--rule); }
 .verse-row {
-  display: flex; align-items: baseline; gap: 1rem;
-  padding: 0.7rem 0.5rem; transition: background 0.12s;
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.7rem 0.5rem;
+  transition: background 0.12s;
 }
-.verse-item.clickable { cursor: pointer; }
-.verse-item.clickable:hover .verse-row { background: rgba(184,136,12,0.07); }
+.verse-item:hover .verse-row { background: rgba(184,136,12,0.07); }
+.verse-item.active { background: rgba(184,136,12,0.12); border-right: 3px solid var(--gold); }
 .verse-item.active .verse-row { background: rgba(184,136,12,0.15); }
-.verse-item.active { border-right: 3px solid var(--gold); }
-.verse-num {
-  font-family: 'Frank Ruhl Libre', serif; font-size: 0.75rem;
-  color: var(--muted); min-width: 2rem; flex-shrink: 0;
-  text-align: left; direction: ltr; padding-top: 3px;
-}
+
+.verse-num { font-family: 'Frank Ruhl Libre', serif; font-size: 0.75rem; color: var(--muted); min-width: 2rem; text-align: left; flex-shrink: 0; direction: ltr; padding-top: 3px; }
 .verse-text { font-family: 'Frank Ruhl Libre', serif; font-size: 1.3rem; line-height: 1.9; color: var(--ink); flex: 1; }
+
 .has-recording .verse-text::after {
-  content: ''; display: inline-block;
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--gold); margin-right: 0.5rem; vertical-align: middle;
-}
-.no-rec-badge {
-  display: inline-block; font-size: 0.65rem;
-  background: rgba(0,0,0,0.06); color: var(--muted);
-  border: 1px solid var(--rule); border-radius: 4px;
-  padding: 1px 6px; direction: ltr; vertical-align: middle; margin-left: 6px;
+  content: '';
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  margin-right: 0.5rem;
+  vertical-align: middle;
 }
 
-/* ── Aliyah chips ── */
-.aliyah-nav { margin-top: 0.7rem; font-size: 0.88rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; direction: ltr; }
-.aliyah-chip { display: inline-block; padding: 0.2rem 0.65rem; border: 1px solid var(--gold); border-radius: 20px; color: var(--gold); text-decoration: none; font-size: 0.8rem; transition: background 0.15s, color 0.15s; }
+/* ── Aliyah nav chips ── */
+.aliyah-nav {
+  margin-top: 0.7rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  direction: ltr;
+}
+.aliyah-chip {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid var(--gold);
+  border-radius: 20px;
+  color: var(--gold);
+  text-decoration: none;
+  font-size: 0.8rem;
+  transition: background 0.15s, color 0.15s;
+}
 .aliyah-chip:hover { background: var(--gold); color: white; }
 
-/* ── Aliyah header divider ── */
-.aliyah-header { list-style: none; display: flex; align-items: baseline; gap: 0.7rem; padding: 1.4rem 0.5rem 0.5rem; border-top: 2px solid var(--gold); margin-top: 0.5rem; }
+/* ── Aliyah section divider ── */
+.aliyah-header {
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding: 1.4rem 0.5rem 0.5rem;
+  border-top: 2px solid var(--gold);
+  margin-top: 0.5rem;
+}
 .aliyah-header:first-child { border-top: none; margin-top: 0; }
 .aliyah-he { font-family: 'Frank Ruhl Libre', serif; font-size: 1.3rem; font-weight: 700; color: var(--navy); }
 .aliyah-en { font-size: 0.95rem; color: var(--gold); font-style: italic; }
@@ -113,29 +138,30 @@ nav {
 
 /* ── Sticky player bar ── */
 .player-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: var(--navy); border-top: 3px solid var(--gold);
-  padding: 0.9rem 2rem; display: flex; align-items: center;
-  gap: 1.2rem; z-index: 100; direction: ltr;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--navy);
+  border-top: 3px solid var(--gold);
+  padding: 0.9rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  z-index: 100;
+  direction: ltr;
 }
 .player-btn {
-  font-size: 1.5rem; background: var(--gold); color: var(--navy);
-  border: none; border-radius: 50%; width: 48px; height: 48px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; transition: background 0.15s, transform 0.1s;
+  font-size: 1.5rem;
+  background: var(--gold);
+  color: var(--navy);
+  border: none;
+  border-radius: 50%;
+  width: 48px; height: 48px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
 }
 .player-btn:hover { background: var(--gold-lt); transform: scale(1.07); }
-.player-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
 .player-info { flex: 1; min-width: 0; }
 .player-verse-label { font-family: 'Frank Ruhl Libre', serif; color: var(--parchment); font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .player-progress { font-size: 0.78rem; color: var(--gold-lt); margin-top: 0.1rem; }
-
-/* ── Save toast (shared) ── */
-.save-toast {
-  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-  background: #2c3e50; color: white; padding: 10px 22px;
-  border-radius: 20px; font-size: 13px; font-family: Arial, sans-serif;
-  opacity: 0; transition: opacity 0.3s; pointer-events: none;
-  z-index: 200; direction: ltr; white-space: nowrap;
-}
-.save-toast.visible { opacity: 1; }

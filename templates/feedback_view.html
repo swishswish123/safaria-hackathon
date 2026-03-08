@@ -6,45 +6,143 @@
   <title>Feedback: {{ assignment.title }} · ScroLein</title>
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='student.css') }}"/>
+  <style>
+    .back-btn {
+      display:flex; align-items:center; padding:0 1.4rem;
+      color:var(--gold-lt); text-decoration:none;
+      font-family:'EB Garamond',serif; font-size:0.95rem;
+      letter-spacing:0.04em; direction:ltr;
+    }
+    .back-btn:hover { color:white; }
+
+    /* Summary banner */
+    .summary-banner {
+      direction:ltr;
+      background: linear-gradient(135deg, #1e3a1e 0%, #2c1a06 50%, #1a1a3a 100%);
+      border:1px solid rgba(184,136,12,0.4);
+      border-radius:10px; padding:22px 26px;
+      margin-bottom:1.6rem;
+    }
+    .sb-header { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
+    .sb-title-area {}
+    .sb-label { font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--gold-lt); margin-bottom:4px; }
+    .sb-title { color:white; font-family:'Frank Ruhl Libre',serif; font-size:1.2rem; font-weight:700; }
+    .sb-meta  { color:#c8a86b; font-size:0.85rem; margin-top:3px; }
+    .sb-date  { color:#a0b090; font-size:0.8rem; margin-top:3px; }
+
+    /* Grade summary pills */
+    .grade-pills { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+    .pill {
+      display:flex; align-items:center; gap:7px;
+      padding:7px 14px; border-radius:20px;
+      font-size:13px; font-weight:bold; font-family:Arial,sans-serif;
+    }
+    .pill-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .pill.perfect { background:rgba(30,132,73,0.2);  color:#4caf73; border:1px solid rgba(30,132,73,0.5); }
+    .pill.some    { background:rgba(183,119,13,0.2); color:#e0a030; border:1px solid rgba(183,119,13,0.5); }
+    .pill.work    { background:rgba(192,57,43,0.2);  color:#e05a4a; border:1px solid rgba(192,57,43,0.5); }
+    .pill.ungraded{ background:rgba(255,255,255,0.07); color:#999; border:1px solid rgba(255,255,255,0.15); }
+    .pill-dot.perfect { background:#27ae60; }
+    .pill-dot.some    { background:#d4a020; }
+    .pill-dot.work    { background:#c0392b; }
+    .pill-dot.ungraded{ background:#888; }
+
+    /* Teacher note */
+    .teacher-note {
+      margin-top:14px; padding:12px 16px;
+      background:rgba(255,255,255,0.06);
+      border-left:3px solid var(--gold);
+      border-radius:0 6px 6px 0;
+      color:#e8d8b0; font-size:0.9rem; font-style:italic;
+    }
+    .teacher-note strong { font-style:normal; color:var(--gold-lt); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; display:block; margin-bottom:5px; }
+
+    /* Action buttons */
+    .action-row {
+      display:flex; gap:12px; margin-top:18px; flex-wrap:wrap;
+    }
+    .btn-practice {
+      padding:10px 22px; background:var(--gold); color:#2c1a06;
+      border:none; border-radius:6px; font-size:14px; font-weight:bold;
+      cursor:pointer; text-decoration:none; display:inline-block;
+      font-family:Arial,sans-serif; transition:background 0.15s;
+    }
+    .btn-practice:hover { background:#c8960a; }
+    .btn-resubmit {
+      padding:10px 22px; background:#27ae60; color:white;
+      border:none; border-radius:6px; font-size:14px; font-weight:bold;
+      cursor:pointer; text-decoration:none; display:inline-block;
+      font-family:Arial,sans-serif; transition:background 0.15s;
+    }
+    .btn-resubmit:hover { background:#1e8449; }
+
+    /* Verse layout — LTR outer, RTL Hebrew inner, grade indicator on left */
+    .verse-item { cursor:default !important; }
+    .verse-item .verse-row { cursor:default !important; }
+    .verse-outer {
+      display:flex; align-items:center; gap:14px;
+      direction:ltr; padding:4px 0;
+    }
+    .verse-content { flex:1; direction:rtl; }
+    .verse-content .verse-row { padding:0; background:transparent !important; }
+
+    .grade-indicator {
+      width:26px; height:26px; border-radius:50%;
+      flex-shrink:0; display:flex; align-items:center;
+      justify-content:center; font-size:13px; font-weight:bold;
+      color:white; font-family:Arial,sans-serif;
+    }
+    .grade-indicator.perfect { background:#27ae60; }
+    .grade-indicator.some    { background:#d4a020; }
+    .grade-indicator.work    { background:#c0392b; }
+    .grade-indicator.none    { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.3); }
+
+    /* Verse tint */
+    .verse-item.graded-perfect { border-left:3px solid #27ae60; }
+    .verse-item.graded-some    { border-left:3px solid #d4a020; }
+    .verse-item.graded-work    { border-left:3px solid #c0392b; }
+
+    /* No player needed on this page */
+  </style>
 </head>
 <body>
 
 <nav>
   <ul class="nav-links">
-    <a href="/dashboard" class="nav-back">← Dashboard</a>
+    <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
   </ul>
   <div class="nav-brand">
-    <img src="/static/scrolein_logo_white.png" alt="ScroLein" class="nav-logo"/>
+    <img src="/static/scrolein_logo_white.png" alt="ScroLein" style="height:40px; filter:brightness(0) invert(1); opacity:0.92;">
   </div>
 </nav>
 
 <div class="page">
 
-  {# ── Feedback summary banner ── #}
-  <div class="fb-summary">
-    <div class="fb-from">Feedback from {{ assignment.assigned_by }}</div>
-    <div class="fb-title">{{ assignment.title }}</div>
-    <div class="fb-meta">{{ assignment.parasha }} · {{ assignment.aliyah }}</div>
-    {% if assignment.feedback_submitted_at %}
-    <div class="fb-date">Graded {{ assignment.feedback_submitted_at.strftime('%B %d, %Y') }}</div>
-    {% endif %}
+  <div class="summary-banner">
+    <div class="sb-header">
+      <div class="sb-title-area">
+        <div class="sb-label">Feedback from {{ assignment.assigned_by }}</div>
+        <div class="sb-title">{{ assignment.title }}</div>
+        <div class="sb-meta">{{ assignment.parasha }} · {{ assignment.aliyah }}</div>
+        {% if assignment.feedback_submitted_at %}
+        <div class="sb-date">Graded {{ assignment.feedback_submitted_at.strftime('%B %d, %Y') }}</div>
+        {% endif %}
+      </div>
+    </div>
 
-    {# Grade summary pills #}
-    {% set n_perfect = namespace(v=0) %}{% set n_some = namespace(v=0) %}
-    {% set n_work    = namespace(v=0) %}{% set n_none  = namespace(v=0) %}
-    {% for v in verses %}
-      {% set g = grades.get(v.num|string, grades.get(v.num, '')) %}
-      {% if   g == 'perfect' %}{% set n_perfect.v = n_perfect.v + 1 %}
-      {% elif g == 'some'    %}{% set n_some.v    = n_some.v    + 1 %}
-      {% elif g == 'work'    %}{% set n_work.v    = n_work.v    + 1 %}
-      {% else %}{% set n_none.v = n_none.v + 1 %}{% endif %}
-    {% endfor %}
-    <div class="fb-pills">
-      {% if n_perfect.v %}<div class="fb-pill perfect"><div class="fb-pill-dot perfect"></div>{{ n_perfect.v }} Perfect</div>{% endif %}
-      {% if n_some.v    %}<div class="fb-pill some">   <div class="fb-pill-dot some">   </div>{{ n_some.v }} Few mistakes</div>{% endif %}
-      {% if n_work.v    %}<div class="fb-pill work">   <div class="fb-pill-dot work">   </div>{{ n_work.v }} Needs work</div>{% endif %}
-      {% if n_none.v    %}<div class="fb-pill ungraded"><div class="fb-pill-dot ungraded"></div>{{ n_none.v }} Not graded</div>{% endif %}
+    <div class="grade-pills">
+      {% set n_perfect = namespace(v=0) %}{% set n_some = namespace(v=0) %}{% set n_work = namespace(v=0) %}{% set n_none = namespace(v=0) %}
+      {% for v in verses %}
+        {% set g = grades.get(v.num|string, grades.get(v.num, '')) %}
+        {% if g == 'perfect' %}{% set n_perfect.v = n_perfect.v + 1 %}
+        {% elif g == 'some' %}{% set n_some.v = n_some.v + 1 %}
+        {% elif g == 'work' %}{% set n_work.v = n_work.v + 1 %}
+        {% else %}{% set n_none.v = n_none.v + 1 %}{% endif %}
+      {% endfor %}
+      {% if n_perfect.v > 0 %}<div class="pill perfect"><div class="pill-dot perfect"></div>{{ n_perfect.v }} Perfect</div>{% endif %}
+      {% if n_some.v > 0 %}<div class="pill some"><div class="pill-dot some"></div>{{ n_some.v }} Few mistakes</div>{% endif %}
+      {% if n_work.v > 0 %}<div class="pill work"><div class="pill-dot work"></div>{{ n_work.v }} Needs work</div>{% endif %}
+      {% if n_none.v > 0 %}<div class="pill ungraded"><div class="pill-dot ungraded"></div>{{ n_none.v }} Not graded</div>{% endif %}
     </div>
 
     {% if assignment.feedback_note %}
@@ -53,31 +151,40 @@
       {{ assignment.feedback_note }}
     </div>
     {% endif %}
+
+    <div class="action-row">
+      <a href="/read/{{ assignment.id }}" class="btn-practice">📖 Open Text &amp; Practice</a>
+      <button class="btn-resubmit" onclick="openResubmitModal()">🎙 Re-record &amp; Resubmit</button>
+    </div>
   </div>
 
-  {# ── Legend ── #}
-  <div class="parasha-header" style="margin-bottom:1rem;">
+  <!-- Parasha header -->
+  <div class="parasha-header">
     <h1>{{ assignment.title }}</h1>
-    <div class="ref-tag">{{ assignment.sefaria_ref or '' }}</div>
-    <div class="legend">
+    <div class="ref-tag" style="direction:ltr;">{{ assignment.sefaria_ref or '' }}</div>
+    <div class="legend" style="direction:ltr;">
       <span style="color:#27ae60;">●</span> Perfect &nbsp;
       <span style="color:#d4a020;">●</span> Few mistakes &nbsp;
       <span style="color:#c0392b;">●</span> Needs work
     </div>
   </div>
 
-  {# ── Graded verse list ── #}
-  <ul class="verse-list" style="margin-bottom:2rem;">
+  <ul class="verse-list">
     {% for v in verses %}
       {% set g = grades.get(v.num|string, grades.get(v.num, '')) %}
-      <li class="verse-item {% if g %}graded-{{ g }}{% endif %}">
+      <li class="verse-item {% if g %}graded-{{ g }}{% endif %}" id="verse-{{ v.num }}">
         <div class="verse-outer">
-          <div class="grade-dot {{ g if g else 'none' }}">
-            {% if g == 'perfect' %}✓{% elif g == 'some' %}⚠{% elif g == 'work' %}✗{% else %}·{% endif %}
+          <!-- Grade indicator dot on left -->
+          <div class="grade-indicator {{ g if g else 'none' }}">
+            {% if g == 'perfect' %}✓
+            {% elif g == 'some' %}⚠
+            {% elif g == 'work' %}✗
+            {% else %}·{% endif %}
           </div>
+          <!-- Hebrew text -->
           <div class="verse-content">
             <div class="verse-row">
-              <span class="verse-num">
+              <span class="verse-num" style="direction:ltr;">
                 {% if v.chapter is defined and v.verse is defined %}{{ v.chapter }}:{{ v.verse }}{% else %}{{ v.num }}{% endif %}
               </span>
               <span class="verse-text">{{ v.text }}</span>
@@ -88,156 +195,35 @@
     {% endfor %}
   </ul>
 
-  {# ── Re-record panel — student practices using the feedback above ── #}
-  <div class="record-panel">
-    <h3>🎙 Re-record Your Leining</h3>
-    <p style="flex-basis:100%; font-size:13px; color:#555; font-family:Arial,sans-serif; margin-top:-4px;">
-      Use the feedback above to guide your practice, then record a new take below.
+</div><!-- end .page -->
+
+<!-- Resubmit confirmation modal -->
+<div class="modal-overlay" id="resubmit-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:200; justify-content:center; align-items:center;">
+  <div style="background:white; border-radius:14px; padding:38px 44px; max-width:400px; width:90%; text-align:center; box-shadow:0 12px 48px rgba(0,0,0,0.3); direction:ltr;">
+    <div style="font-size:40px; margin-bottom:12px;">🎙️</div>
+    <h2 style="font-size:20px; color:#2c3e50; margin-bottom:10px;">Re-record &amp; Resubmit?</h2>
+    <p style="color:#666; font-size:14px; line-height:1.6; margin-bottom:26px;">
+      This will unsubmit your current recording so you can practice and submit a new one. Your teacher's feedback will stay visible here.
     </p>
-
-    {% if assignment.recording_filename %}
-    <div class="existing-rec">
-      Previous recording on file — recording again will replace it.
-      <audio controls src="/static/recordings/{{ assignment.recording_filename }}"></audio>
-    </div>
-    {% endif %}
-
-    <button class="btn-record start" id="btn-start" onclick="startRec()">⏺ Start Recording</button>
-    <button class="btn-record stop"  id="btn-stop"  onclick="stopRec()" disabled>⏹ Stop</button>
-    <span class="rec-dot" id="rec-dot"></span>
-    <span class="rec-status" id="rec-status">Press Start when you are ready to lein.</span>
-
-    <div class="playback-area" id="playback-area">
-      <audio id="playback-audio" controls></audio>
-    </div>
-
-    <div class="upload-status" id="upload-status"></div>
-
-    {# Submit row — appears after upload succeeds #}
-    <div class="submit-row" id="submit-row">
-      <form method="POST" action="/submit/{{ assignment.id }}" style="display:inline;">
-        <button type="submit" class="btn-sm green" style="font-size:15px; padding:10px 24px;">
-          ✓ Submit New Recording
-        </button>
+    <div style="display:flex; gap:12px; justify-content:center;">
+      <button onclick="closeResubmitModal()" style="padding:10px 22px; background:#eee; border:none; border-radius:6px; font-size:14px; cursor:pointer; color:#555;">Cancel</button>
+      <form method="POST" action="/unsubmit/{{ assignment.id }}" style="display:inline;">
+        <button type="submit" style="padding:10px 24px; background:#27ae60; color:white; border:none; border-radius:6px; font-size:14px; font-weight:bold; cursor:pointer;">Yes, Re-record</button>
       </form>
-      <span style="font-size:13px; color:#27ae60; font-family:Arial,sans-serif;">Recording saved — submit when ready!</span>
     </div>
-  </div>
-
-</div>
-
-{# ── Sefaria player bar for reference audio ── #}
-<div class="player-bar">
-  <button class="player-btn" id="btn-prev" onclick="go(-1)" title="Previous">◀</button>
-  <button class="player-btn" id="btn-play" onclick="togglePlay()" title="Play">▶</button>
-  <button class="player-btn" id="btn-next" onclick="go(+1)"  title="Next">▶▶</button>
-  <div class="player-info">
-    <div class="player-verse-label" id="player-label">Sefaria reference audio — click a pasuk or press Play</div>
-    <div class="player-progress"    id="player-progress"></div>
   </div>
 </div>
 
 <script>
-// ── Data from server ──────────────────────
-const VERSES        = {{ verses | tojson }};
-const ASSIGNMENT_ID = {{ assignment.id }};
-
-// ── Sefaria per-verse player ─────────────
-let idx = 0, audio = null, paused = false;
-const btnPlay    = document.getElementById('btn-play');
-const labelEl    = document.getElementById('player-label');
-const progressEl = document.getElementById('player-progress');
-
-function highlight(i) {
-  document.querySelectorAll('.verse-item').forEach(el => el.classList.remove('active'));
-  const li = document.getElementById('verse-' + VERSES[i].num);
-  if (li) { li.classList.add('active'); li.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+function openResubmitModal() {
+  document.getElementById('resubmit-modal').style.display = 'flex';
 }
-function updateBar() {
-  const v = VERSES[idx];
-  labelEl.textContent    = (v.chapter && v.verse) ? `Pasuk ${v.chapter}:${v.verse}` : `Pasuk ${v.num}`;
-  progressEl.textContent = `${idx + 1} / ${VERSES.length}${v.media_url ? '' : ' · no Sefaria recording'}`;
+function closeResubmitModal() {
+  document.getElementById('resubmit-modal').style.display = 'none';
 }
-function stopAudio() { if (audio) { audio.pause(); audio.src=''; audio=null; } }
-function playFrom(i) {
-  stopAudio(); paused = false; idx = i; highlight(i); updateBar();
-  btnPlay.innerHTML = '⏸';
-  const v = VERSES[i];
-  if (!v.media_url) { btnPlay.innerHTML = '▶▶'; setTimeout(() => { if (!paused) advance(); }, 1200); return; }
-  audio = new Audio(v.media_url);
-  audio.onended = advance;
-  audio.onerror = () => advance();
-  audio.play().catch(advance);
-}
-function advance() { if (paused) return; if (idx < VERSES.length-1) playFrom(idx+1); else { stopAudio(); btnPlay.innerHTML='▶'; labelEl.textContent='Finished!'; progressEl.textContent=''; } }
-function togglePlay() {
-  if (audio && !audio.paused) { audio.pause(); paused=true; btnPlay.innerHTML='▶'; }
-  else if (audio && audio.paused) { paused=false; audio.play(); btnPlay.innerHTML='⏸'; }
-  else playFrom(idx);
-}
-function go(d) { const n=idx+d; if (n>=0 && n<VERSES.length) playFrom(n); }
-highlight(0); updateBar();
-
-// ── Microphone recorder ───────────────────
-// (This JS block is unavoidable — no server-side API exists for browser mic access)
-let mediaRecorder = null, chunks = [];
-const btnStart  = document.getElementById('btn-start');
-const btnStop   = document.getElementById('btn-stop');
-const recDot    = document.getElementById('rec-dot');
-const recStatus = document.getElementById('rec-status');
-const playArea  = document.getElementById('playback-area');
-const playAud   = document.getElementById('playback-audio');
-const upStatus  = document.getElementById('upload-status');
-const submitRow = document.getElementById('submit-row');
-
-async function startRec() {
-  let stream;
-  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
-  catch { recStatus.textContent = 'Microphone access denied — allow it in browser settings.'; return; }
-  chunks = [];
-  const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
-  mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
-  mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-  mediaRecorder.onstop = () => {
-    stream.getTracks().forEach(t => t.stop());
-    const blob = new Blob(chunks, { type: mime });
-    playAud.src = URL.createObjectURL(blob);
-    playArea.style.display = 'block';
-    uploadRec(blob, mime);
-  };
-  mediaRecorder.start();
-  btnStart.disabled = true; btnStop.disabled = false;
-  recDot.classList.add('visible');
-  recStatus.textContent = 'Recording…';
-  upStatus.className = 'upload-status'; upStatus.textContent = '';
-  submitRow.classList.remove('visible');
-}
-
-function stopRec() {
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-  btnStart.disabled = false; btnStop.disabled = true;
-  recDot.classList.remove('visible');
-  recStatus.textContent = 'Stopped. Saving…';
-}
-
-async function uploadRec(blob, mime) {
-  upStatus.className = 'upload-status saving'; upStatus.textContent = 'Saving recording…';
-  const fd = new FormData();
-  fd.append('recording', blob, 'recording.webm');
-  try {
-    const res  = await fetch(`/upload-recording/${ASSIGNMENT_ID}`, { method: 'POST', body: fd });
-    const data = await res.json();
-    if (data.success) {
-      upStatus.className = 'upload-status saved'; upStatus.textContent = 'Recording saved!';
-      recStatus.textContent = 'Saved. Record again to replace, or submit below.';
-      submitRow.classList.add('visible');
-    } else throw new Error(data.error || 'Unknown error');
-  } catch(e) {
-    upStatus.className = 'upload-status error'; upStatus.textContent = 'Save failed: ' + e.message;
-    recStatus.textContent = 'Error — please try again.';
-  }
-}
+document.getElementById('resubmit-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeResubmitModal();
+});
 </script>
-
 </body>
 </html>
