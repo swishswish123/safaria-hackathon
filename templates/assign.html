@@ -165,33 +165,7 @@
 
         {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
 
-        <!-- ═══ STEP 1: Pick a Sefer (GET form, reloads page) ═══ -->
-        {% if not selected_sefer %}
-        <div class="step-label">Step 1 — Choose a Sefer</div>
-        <form method="GET">
-            <div class="sefer-grid">
-                {% for sefer in sfarim %}
-                <button type="submit" name="sefer" value="{{ sefer }}"
-                        class="sefer-btn {% if sefer == selected_sefer %}active{% endif %}">
-                    {{ sefer }}
-                </button>
-                {% endfor %}
-            </div>
-        </form>
-
-        {% else %}
-
-        <!-- ═══ STEP 2: Full form with sefer locked in ═══ -->
-
-        <!-- Show which sefer is selected, with change link -->
-        <div class="selected-summary">
-            <strong>Sefer: {{ selected_sefer }}</strong>
-            <a href="/teacher/assign/{{ student.username }}" style="font-size:12px; color:#8e44ad;">Change</a>
-        </div>
-
-        <form method="POST">
-            <!-- Carry sefer through -->
-            <input type="hidden" name="sefer" value="{{ selected_sefer }}" />
+        <form method="POST" id="assign-form">
 
             <!-- Assignment Title -->
             <div class="field">
@@ -201,29 +175,28 @@
                        value="{{ request.form.get('title', '') }}" required />
             </div>
 
-            <!-- Parasha dropdown — server-populated from library -->
+            <!-- Parasha dropdown — all parshiot grouped by sefer -->
             <div class="field">
                 <label for="parasha">Parasha</label>
-                <select id="parasha" name="parasha" required>
+                <select id="parasha" name="parasha" required onchange="onParshaChange()">
                     <option value="">-- Select a Parasha --</option>
-                    {% for p in parshiot %}
-                    <option value="{{ p }}" {% if p == selected_parsha %}selected{% endif %}>
-                        {{ p }}
-                    </option>
+                    {% for sefer, parshas in torah_lib.items() %}
+                    <optgroup label="{{ sefer }}">
+                        {% for p in parshas %}
+                        <option value="{{ p }}" {% if p == request.form.get('parasha') %}selected{% endif %}>
+                            {{ p }}
+                        </option>
+                        {% endfor %}
+                    </optgroup>
                     {% endfor %}
                 </select>
             </div>
 
-            <!-- Aliyah -->
+            <!-- Aliyah — populated dynamically based on parasha selection -->
             <div class="field">
                 <label for="aliyah">Aliyah</label>
                 <select id="aliyah" name="aliyah" required>
-                    <option value="">-- Select an Aliyah --</option>
-                    {% for label in aliyah_labels %}
-                    <option value="{{ label }}" {% if request.form.get('aliyah') == label %}selected{% endif %}>
-                        {{ label }}
-                    </option>
-                    {% endfor %}
+                    <option value="">-- Select a Parasha first --</option>
                 </select>
             </div>
 
@@ -265,8 +238,6 @@
 
             <button type="submit" class="btn-submit">Assign</button>
         </form>
-
-        {% endif %}
     </div>
 
     <!-- ── RIGHT: Existing assignments ── -->
@@ -291,6 +262,68 @@
     </div>
 
 </div>
+
+<script>
+// Torah library embedded for client-side aliyah population
+const TORAH_LIB = {{ torah_lib | tojson }};
+const ALIYAH_LABELS = [
+  "First Aliyah", "Second Aliyah", "Third Aliyah", "Fourth Aliyah",
+  "Fifth Aliyah", "Sixth Aliyah", "Seventh Aliyah", "Maftir", "Haftorah"
+];
+const SAVED_PARSHA = {{ (request.form.get('parasha') or '') | tojson }};
+const SAVED_ALIYAH = {{ (request.form.get('aliyah') or '') | tojson }};
+
+function onParshaChange() {
+  const parsha = document.getElementById('parasha').value;
+  const aliyahSel = document.getElementById('aliyah');
+  aliyahSel.innerHTML = '';
+
+  if (!parsha) {
+    aliyahSel.innerHTML = '<option value="">-- Select a Parasha first --</option>';
+    return;
+  }
+
+  // Find aliyot count for this parasha
+  let aliyotCount = 7; // default
+  for (const [sefer, parshas] of Object.entries(TORAH_LIB)) {
+    if (parshas[parsha]) {
+      aliyotCount = parshas[parsha].aliyot.length;
+      break;
+    }
+  }
+
+  // Add standard aliyah options based on count
+  const labels = ALIYAH_LABELS.slice(0, aliyotCount);
+  labels.push("Maftir", "Haftorah");
+
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = '-- Select an Aliyah --';
+  aliyahSel.appendChild(placeholder);
+
+  // Deduplicate (in case Maftir/Haftorah already in slice)
+  const seen = new Set();
+  for (const label of labels) {
+    if (seen.has(label)) continue;
+    seen.add(label);
+    const opt = document.createElement('option');
+    opt.value = label;
+    opt.textContent = label;
+    if (label === SAVED_ALIYAH) opt.selected = true;
+    aliyahSel.appendChild(opt);
+  }
+}
+
+// On page load, restore state if returning from a POST error
+document.addEventListener('DOMContentLoaded', () => {
+  if (SAVED_PARSHA) {
+    document.getElementById('parasha').value = SAVED_PARSHA;
+    onParshaChange();
+  } else {
+    onParshaChange();
+  }
+});
+</script>
 
 </body>
 </html>

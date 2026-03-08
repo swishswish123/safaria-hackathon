@@ -190,7 +190,7 @@
     <a href="/teacher/student/{{ assignment.username }}" class="back-btn">← Back to {{ assignment.username }}'s Assignments</a>
   </ul>
   <div class="nav-brand">
-    <img src="/static/scrolein_logo_white.png" alt="ScroLein" style="height:40px; filter:brightness(0) invert(1); opacity:0.92;">
+    <img src="/static/scrolein_logo_white.png" alt="ScroLein" style="height:40px; opacity:0.92;">
   </div>
 </nav>
 
@@ -226,6 +226,7 @@
       <div class="fab-progress" id="fab-progress">0 of {{ verses|length }} pasukim graded</div>
     </div>
     <div class="fab-right">
+      <button class="btn-finish-later" onclick="markAllPerfect()" style="background:rgba(30,132,73,0.25); border:1px solid #1e8449;">✅ Mark All Perfect</button>
       <button class="btn-finish-later" onclick="finishLater()">💾 Finish Later</button>
       <button class="btn-submit-feedback" id="btn-submit-fb" onclick="openSubmitModal()">
         ✓ Submit Feedback to {{ assignment.username }}
@@ -334,6 +335,11 @@ const grades = {};  // { verseNum: "perfect"|"some"|"work" }
 // ══════════════════════════════════════════════
 // Grading
 // ══════════════════════════════════════════════
+function markAllPerfect() {
+  {% for v in verses %}grade({{ v.num }}, 'perfect');{% endfor %}
+  autoSave();
+}
+
 function grade(num, level) {
   grades[num] = level;
   applyGradeUI(num, level);

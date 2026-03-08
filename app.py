@@ -62,204 +62,26 @@ class Assignment(db.Model):
 
 
 # ================================================================== SEFARIA HELPERS
+import sefaria as sf
 
-# Hebrew aliyah labels
-ALIYAH_NAMES_HE = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שביעי','מפטיר']
-ALIYAH_NAMES_EN = ["Rishon","Sheni","Shlishi","Revi'i","Chamishi","Shishi","Shevi'i","Maftir"]
-
-# Load local torah library for offline aliyot lookups
-_torah_lib_path = os.path.join(os.path.dirname(__file__), "torah_library.json")
-_TORAH_LIB = {}
-if os.path.exists(_torah_lib_path):
-    with open(_torah_lib_path) as _f:
-        _TORAH_LIB = _json.load(_f)
-
-# Build a flat parsha->data map for quick lookups regardless of sefer
-_PARSHA_MAP = {}
-for _sefer, _parshas in _TORAH_LIB.items():
-    for _pname, _pdata in _parshas.items():
-        _PARSHA_MAP[_pname] = _pdata
-
-# Map our aliyah dropdown labels → 0-based index into the aliyot list
 ALIYAH_INDEX = {
     "First Aliyah": 0, "Second Aliyah": 1, "Third Aliyah": 2,
     "Fourth Aliyah": 3, "Fifth Aliyah": 4, "Sixth Aliyah": 5,
     "Seventh Aliyah": 6, "Maftir": 7, "Haftorah": None,
 }
 
-def clean_verse(text):
-    """Strip HTML tags, decode entities, normalise whitespace."""
-    if not text: return ''
-    text = re.sub(r'<[^>]+>', '', text)
-    text = unescape(text)
-    text = re.sub(r'&[a-zA-Z]+;|&#\d+;|&#x[0-9a-fA-F]+;', '', text)
-    text = text.replace('\u00a0', ' ').replace('\u2009', ' ')
-    return text.strip()
-
-def flatten_verses(node):
-    """Recursively flatten nested Hebrew text into flat list."""
-    if not node: return []
-    if isinstance(node[0], str):
-        return [clean_verse(v) for v in node if v]
-    return [v for sub in node for v in flatten_verses(sub)]
-
-def ref_to_verse_range(aliyah_ref, chapter_offsets):
-    """Convert a Sefaria ref like 'Genesis 6:9-6:22' into (start, end) global indices."""
-    m = re.search(r'(\d+):(\d+)-(\d+):(\d+)', aliyah_ref)
-    if not m:
-        m2 = re.search(r'(\d+):(\d+)-(\d+)$', aliyah_ref)
-        if m2:
-            ch, vs, ve = int(m2.group(1)), int(m2.group(2)), int(m2.group(3))
-            off = chapter_offsets.get(ch, 1)
-            return (off + vs - 1, off + ve - 1)
-        return None
-    ch_s, v_s = int(m.group(1)), int(m.group(2))
-    ch_e, v_e = int(m.group(3)), int(m.group(4))
-    return (chapter_offsets.get(ch_s, 1) + v_s - 1,
-            chapter_offsets.get(ch_e, 1) + v_e - 1)
-
 def get_section_data(ref, aliyot_refs=None):
-    """
-    Fetch verses + recordings from Sefaria for a given ref.
-    Recordings are matched to verses by their chapter:verse position
-    within the ref, so they line up correctly even mid-parasha.
-    Returns (verses list, aliyot list) ready for parasha.html.
-    """
-    try:
-        text_data = requests.get(
-            f"https://www.sefaria.org/api/texts/{ref}",
-            timeout=8
-        ).json()
-    except Exception:
-        return [], []
-
-    raw_he = text_data.get('he', [])
-
-    # Determine the starting chapter:verse from the ref (e.g. "Genesis 12:1-12:9")
-    # so we can match recording anchorRefs accurately
-    start_ch_match = re.search(r'(\d+):(\d+)', ref)
-    start_ch  = int(start_ch_match.group(1)) if start_ch_match else 1
-    start_v   = int(start_ch_match.group(2)) if start_ch_match else 1
-
-    # Build chapter offsets for aliyah boundary mapping
-    chapter_offsets = {}
-    global_idx = 1
-    if raw_he and isinstance(raw_he[0], list):
-        for ci, ch in enumerate(raw_he):
-            chapter_offsets[start_ch + ci] = global_idx
-            global_idx += len([v for v in ch if v])
-    else:
-        chapter_offsets[start_ch] = 1
-
-    verses_flat = flatten_verses(raw_he)
-
-    # Fetch recordings for this specific ref
-    try:
-        media_list = requests.get(
-            f"https://www.sefaria.org/api/related/{ref}",
-            timeout=6
-        ).json().get('media', [])
-    except Exception:
-        media_list = []
-
-    # Build a mapping of (chapter, verse) -> recording
-    # Sefaria anchorRef looks like "Genesis 12:3" or "Genesis 12:3-5"
-    recordings_by_cv = {}
-    for rec in media_list:
-        anchor = rec.get('anchorRef', '')
-        m2 = re.search(r'(\d+):(\d+)', anchor)
-        if m2:
-            ch, v = int(m2.group(1)), int(m2.group(2))
-            if (ch, v) not in recordings_by_cv:
-                recordings_by_cv[(ch, v)] = {
-                    'media_url':   rec.get('media_url', ''),
-                    'description': rec.get('description', ''),
-                    'anchor':      anchor,
-                }
-
-    # Build aliyot
-    aliyot = []
-    if aliyot_refs:
-        for i, aref in enumerate(aliyot_refs):
-            rng = ref_to_verse_range(aref, chapter_offsets)
-            if rng:
-                aliyot.append({
-                    'name_he': ALIYAH_NAMES_HE[i] if i < len(ALIYAH_NAMES_HE) else f'עלייה {i+1}',
-                    'name_en': ALIYAH_NAMES_EN[i] if i < len(ALIYAH_NAMES_EN) else f'Aliyah {i+1}',
-                    'start': rng[0], 'end': rng[1], 'ref': aref,
-                })
-
-    # Zip verses — track actual chapter:verse as we walk through the text
-    verses = []
-    flat_idx = 0  # position within verses_flat
-    cur_ch = start_ch
-    cur_v  = start_v
-
-    # If multi-chapter, walk chapter by chapter
-    if raw_he and isinstance(raw_he[0], list):
-        for ci, ch_verses in enumerate(raw_he):
-            ch_num = start_ch + ci
-            for vi, raw_v in enumerate(ch_verses):
-                if not raw_v:
-                    cur_v += 1
-                    continue
-                v_num = start_v + vi if ci == 0 else vi + 1
-                text  = clean_verse(raw_v)
-                rec   = recordings_by_cv.get((ch_num, v_num))
-                aliyah_idx = next((ai for ai, al in enumerate(aliyot)
-                                   if al['start'] <= flat_idx + 1 <= al['end']), None)
-                verses.append({
-                    'num': flat_idx + 1, 'text': text,
-                    'chapter': ch_num, 'verse': v_num,
-                    'media_url':   rec['media_url']   if rec else '',
-                    'description': rec['description'] if rec else '',
-                    'anchor':      rec['anchor']       if rec else '',
-                    'aliyah_idx':  aliyah_idx,
-                })
-                flat_idx += 1
-    else:
-        # Single chapter
-        for vi, raw_v in enumerate(raw_he if isinstance(raw_he, list) else []):
-            if not raw_v: continue
-            v_num = start_v + vi
-            text  = clean_verse(raw_v) if isinstance(raw_v, str) else ''
-            if not text: continue
-            rec = recordings_by_cv.get((start_ch, v_num))
-            verses.append({
-                'num': flat_idx + 1, 'text': text,
-                'chapter': start_ch, 'verse': v_num,
-                'media_url':   rec['media_url']   if rec else '',
-                'description': rec['description'] if rec else '',
-                'anchor':      rec['anchor']       if rec else '',
-                'aliyah_idx':  None,
-            })
-            flat_idx += 1
-
-    return verses, aliyot
+    """Fetch verses for a ref. Returns (verses, [])."""
+    return sf.get_verses_for_ref(ref), []
 
 def fetch_parasha_aliyot(parasha_name):
-    """
-    Return the list of aliyah ref strings for a given parasha name.
-    Uses local torah_library.json — no network call needed.
-    """
-    entry = _PARSHA_MAP.get(parasha_name, {})
-    return entry.get("aliyot", [])
+    """Return the list of aliyah refs for a parasha from the local library."""
+    return sf.get_aliyot_for_parasha(parasha_name)
 
 def build_sefaria_ref(parasha, aliyah_label):
-    """
-    Given parasha name + aliyah label, return the Sefaria ref string for that aliyah.
-    Uses local torah_library.json.
-    Returns (ref_string, display_name) or (parasha_name, parasha_name) on failure.
-    """
-    aliyot_refs = fetch_parasha_aliyot(parasha)
-    idx = ALIYAH_INDEX.get(aliyah_label)
-    entry = _PARSHA_MAP.get(parasha, {})
-    full_ref = entry.get("ref", parasha)
-
-    if idx is None or not aliyot_refs or idx >= len(aliyot_refs):
-        return full_ref, parasha
-    ref = aliyot_refs[idx]
-    return ref, f"{parasha} – {aliyah_label}"
+    """Resolve a parasha + aliyah label to a Sefaria ref."""
+    ref = sf.get_aliyah_ref(parasha, aliyah_label)
+    return ref or parasha, f"{parasha} – {aliyah_label}"
 
 
 # ================================================================== GENERAL HELPERS
@@ -513,40 +335,12 @@ def assign(student_username):
     if not teacher: return redirect(url_for("home"))
     student = User.query.filter_by(username=student_username, role="student").first()
     if not student: return redirect(url_for("teacher_dashboard"))
-
-    # Load torah library for sefer/parsha dropdowns
-    import json as _json2
-    try:
-        with open(os.path.join(os.path.dirname(__file__), "torah_library.json")) as f:
-            torah_lib = _json2.load(f)
-    except Exception:
-        torah_lib = {}
-
-    sfarim = list(torah_lib.keys())
-    aliyah_labels = list(ALIYAH_INDEX.keys())
-
     error = None
-    # Step 1 sefer comes via GET query string; step 2+ via POST form
-    selected_sefer  = (request.args.get("sefer") or request.form.get("sefer", "")).strip()
-    selected_parsha = request.form.get("parasha", "").strip()
-
-    # Build parasha list for the selected sefer
-    parshiot = list(torah_lib.get(selected_sefer, {}).keys()) if selected_sefer else []
-
     if request.method == "POST":
-        # Step 1b: sefer was submitted via POST but no title yet — re-render with sefer locked
-        if selected_sefer and not request.form.get("title"):
-            existing = Assignment.query.filter_by(username=student_username).all()
-            return render_template("assign.html", teacher=teacher, student=student,
-                                   existing=existing, error=error,
-                                   sfarim=sfarim, selected_sefer=selected_sefer,
-                                   parshiot=parshiot, selected_parsha=selected_parsha,
-                                   aliyah_labels=aliyah_labels)
-
-        title            = request.form.get("title", "").strip()
-        parasha          = request.form.get("parasha", "").strip()
-        aliyah           = request.form.get("aliyah", "").strip()
-        due_date         = request.form.get("due_date", "").strip()
+        title            = request.form["title"].strip()
+        parasha          = request.form["parasha"].strip()
+        aliyah           = request.form["aliyah"].strip()
+        due_date         = request.form["due_date"].strip()
         notes            = request.form.get("notes","").strip()
         recording_choice = request.form.get("recording_choice", "included")
         if not title or not parasha or not aliyah:
@@ -564,13 +358,19 @@ def assign(student_username):
             if recording_choice == "own":
                 return redirect(url_for("teacher_record_nusach", assignment_id=new_assignment.id))
             return redirect(url_for("teacher_dashboard"))
-
     existing = Assignment.query.filter_by(username=student_username).all()
+    parshiot_by_sefer = sf.get_parshiot_by_sefer()
     return render_template("assign.html", teacher=teacher, student=student,
                            existing=existing, error=error,
-                           sfarim=sfarim, selected_sefer=selected_sefer,
-                           parshiot=parshiot, selected_parsha=selected_parsha,
-                           aliyah_labels=aliyah_labels)
+                           sfarim=list(parshiot_by_sefer.keys()),
+                           parshiot_by_sefer=parshiot_by_sefer,
+                           selected_sefer=request.args.get("sefer",""),
+                           selected_parsha=request.form.get("parasha",""),
+                           parshiot=parshiot_by_sefer.get(request.args.get("sefer",""), []),
+                           aliyah_labels=["First Aliyah","Second Aliyah","Third Aliyah",
+                               "Fourth Aliyah","Fifth Aliyah","Sixth Aliyah",
+                               "Seventh Aliyah","Maftir","Haftorah"],
+                           torah_lib=sf.get_library())
 
 # ------------------------------------------------------------------ SEFARIA PREVIEW API
 # Called by JavaScript on the assign page to show a live verse preview
@@ -587,9 +387,8 @@ def sefaria_preview():
     if idx is None:
         return jsonify({"error": "Haftorah preview not supported yet"}), 400
     if not aliyot_refs or idx >= len(aliyot_refs):
-        entry = _PARSHA_MAP.get(parasha, {})
-        sname = entry.get("ref", parasha)
-        return jsonify({"ref": sname, "verses": [], "note": "Aliyah boundaries unavailable — showing full parasha on the reading page."})
+        entry = sf.get_aliyot_for_parasha(parasha)
+        return jsonify({"ref": parasha, "verses": [], "note": "Aliyah boundaries unavailable — showing full parasha on the reading page."})
 
     ref = aliyot_refs[idx]
     verses, _ = get_section_data(ref)
@@ -744,7 +543,8 @@ def save_grades(assignment_id):
 
     data = request.get_json()
     grades = data.get("grades", {})
-    assignment.verse_grades = _json.dumps(grades) if isinstance(grades, dict) else (grades or "{}")
+    import json as _json2
+    assignment.verse_grades = _json2.dumps(grades) if isinstance(grades, dict) else (grades or "{}")
     db.session.commit()
     return jsonify({"success": True})
 
@@ -761,10 +561,11 @@ def submit_feedback(assignment_id):
 
     data = request.get_json(silent=True) or {}
     grades = data.get("grades", {})
-    assignment.verse_grades          = _json.dumps(grades) if isinstance(grades, dict) else (assignment.verse_grades or "{}")
+    import json as _json2
+    assignment.verse_grades          = _json2.dumps(grades) if isinstance(grades, dict) else (grades or assignment.verse_grades or "{}")
     assignment.feedback_note         = data.get("feedback_note", "")
     assignment.feedback_submitted    = True
-    assignment.feedback_seen         = False   # student hasn't seen it yet
+    assignment.feedback_seen         = False
     assignment.feedback_submitted_at = datetime.utcnow()
     db.session.commit()
     return jsonify({"success": True})
