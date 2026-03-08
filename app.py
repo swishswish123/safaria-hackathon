@@ -111,6 +111,8 @@ def ref_to_verse_range(aliyah_ref, chapter_offsets):
 def get_section_data(ref, aliyot_refs=None):
     """
     Fetch verses + recordings from Sefaria for a given ref.
+    Recordings are matched to verses by their chapter:verse position
+    within the ref, so they line up correctly even mid-parasha.
     Returns (verses list, aliyot list) ready for parasha.html.
     """
     try:
@@ -123,21 +125,25 @@ def get_section_data(ref, aliyot_refs=None):
 
     raw_he = text_data.get('he', [])
 
-    # Build chapter offsets
+    # Determine the starting chapter:verse from the ref (e.g. "Genesis 12:1-12:9")
+    # so we can match recording anchorRefs accurately
+    start_ch_match = re.search(r'(\d+):(\d+)', ref)
+    start_ch  = int(start_ch_match.group(1)) if start_ch_match else 1
+    start_v   = int(start_ch_match.group(2)) if start_ch_match else 1
+
+    # Build chapter offsets for aliyah boundary mapping
     chapter_offsets = {}
     global_idx = 1
-    m = re.search(r'(\d+):', ref)
-    first_ch = int(m.group(1)) if m else 1
     if raw_he and isinstance(raw_he[0], list):
         for ci, ch in enumerate(raw_he):
-            chapter_offsets[first_ch + ci] = global_idx
+            chapter_offsets[start_ch + ci] = global_idx
             global_idx += len([v for v in ch if v])
     else:
-        chapter_offsets[first_ch] = 1
+        chapter_offsets[start_ch] = 1
 
     verses_flat = flatten_verses(raw_he)
 
-    # Fetch recordings
+    # Fetch recordings for this specific ref
     try:
         media_list = requests.get(
             f"https://www.sefaria.org/api/related/{ref}",
@@ -146,14 +152,16 @@ def get_section_data(ref, aliyot_refs=None):
     except Exception:
         media_list = []
 
-    recordings_by_verse = {}
+    # Build a mapping of (chapter, verse) -> recording
+    # Sefaria anchorRef looks like "Genesis 12:3" or "Genesis 12:3-5"
+    recordings_by_cv = {}
     for rec in media_list:
         anchor = rec.get('anchorRef', '')
-        m2 = re.search(r':(\d+)', anchor)
+        m2 = re.search(r'(\d+):(\d+)', anchor)
         if m2:
-            vnum = int(m2.group(1))
-            if vnum not in recordings_by_verse:
-                recordings_by_verse[vnum] = {
+            ch, v = int(m2.group(1)), int(m2.group(2))
+            if (ch, v) not in recordings_by_cv:
+                recordings_by_cv[(ch, v)] = {
                     'media_url':   rec.get('media_url', ''),
                     'description': rec.get('description', ''),
                     'anchor':      anchor,
@@ -171,19 +179,51 @@ def get_section_data(ref, aliyot_refs=None):
                     'start': rng[0], 'end': rng[1], 'ref': aref,
                 })
 
-    # Zip verses
+    # Zip verses — track actual chapter:verse as we walk through the text
     verses = []
-    for i, text in enumerate(verses_flat, start=1):
-        rec = recordings_by_verse.get(i)
-        aliyah_idx = next((ai for ai, al in enumerate(aliyot)
-                           if al['start'] <= i <= al['end']), None)
-        verses.append({
-            'num': i, 'text': text,
-            'media_url':   rec['media_url']   if rec else '',
-            'description': rec['description'] if rec else '',
-            'anchor':      rec['anchor']       if rec else '',
-            'aliyah_idx':  aliyah_idx,
-        })
+    flat_idx = 0  # position within verses_flat
+    cur_ch = start_ch
+    cur_v  = start_v
+
+    # If multi-chapter, walk chapter by chapter
+    if raw_he and isinstance(raw_he[0], list):
+        for ci, ch_verses in enumerate(raw_he):
+            ch_num = start_ch + ci
+            for vi, raw_v in enumerate(ch_verses):
+                if not raw_v:
+                    cur_v += 1
+                    continue
+                v_num = start_v + vi if ci == 0 else vi + 1
+                text  = clean_verse(raw_v)
+                rec   = recordings_by_cv.get((ch_num, v_num))
+                aliyah_idx = next((ai for ai, al in enumerate(aliyot)
+                                   if al['start'] <= flat_idx + 1 <= al['end']), None)
+                verses.append({
+                    'num': flat_idx + 1, 'text': text,
+                    'chapter': ch_num, 'verse': v_num,
+                    'media_url':   rec['media_url']   if rec else '',
+                    'description': rec['description'] if rec else '',
+                    'anchor':      rec['anchor']       if rec else '',
+                    'aliyah_idx':  aliyah_idx,
+                })
+                flat_idx += 1
+    else:
+        # Single chapter
+        for vi, raw_v in enumerate(raw_he if isinstance(raw_he, list) else []):
+            if not raw_v: continue
+            v_num = start_v + vi
+            text  = clean_verse(raw_v) if isinstance(raw_v, str) else ''
+            if not text: continue
+            rec = recordings_by_cv.get((start_ch, v_num))
+            verses.append({
+                'num': flat_idx + 1, 'text': text,
+                'chapter': start_ch, 'verse': v_num,
+                'media_url':   rec['media_url']   if rec else '',
+                'description': rec['description'] if rec else '',
+                'anchor':      rec['anchor']       if rec else '',
+                'aliyah_idx':  None,
+            })
+            flat_idx += 1
 
     return verses, aliyot
 
@@ -498,15 +538,30 @@ def read_assignment(assignment_id):
     if not ref:
         return redirect(url_for("dashboard"))
 
-    # Fetch aliyot refs for this parasha so we can mark boundaries
+    # Get the aliyah index so we can isolate just that aliyah's verses
+    aliyah_idx = ALIYAH_INDEX.get(assignment.aliyah)
+
+    # Fetch all aliyot refs for this parasha to find verse boundaries
     aliyot_refs = fetch_parasha_aliyot(assignment.parasha)
-    verses, aliyot = get_section_data(ref, aliyot_refs)
+
+    # If we have a specific aliyah and its ref, fetch ONLY that aliyah's ref
+    # This ensures we only load and display the exact assigned section
+    if aliyah_idx is not None and aliyot_refs and aliyah_idx < len(aliyot_refs):
+        aliyah_ref = aliyot_refs[aliyah_idx]
+        # Fetch just this aliyah's text and recordings directly
+        verses, _ = get_section_data(aliyah_ref, [])
+    else:
+        # Fallback: fetch the whole parasha ref
+        verses, _ = get_section_data(ref, [])
+
+    # Re-number verses starting from 1 for clean display
+    for i, v in enumerate(verses, start=1):
+        v['display_num'] = i
 
     return render_template("parasha.html",
         name       = assignment.title,
         ref        = ref,
         verses     = verses,
-        aliyot     = aliyot,
         assignment = assignment
     )
 
