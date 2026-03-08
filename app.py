@@ -1,180 +1,184 @@
-from flask import Flask, render_template, request, url_for, redirect
-import requests
-import re
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+import random, string, re, requests
 from html import unescape
 
 app = Flask(__name__)
-
-# Hebrew aliyah names in order
-ALIYAH_NAMES = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שביעי', 'מפטיר']
-ALIYAH_NAMES_EN = ['Rishon', 'Sheni', 'Shlishi', 'Revi\'i', 'Chamishi', 'Shishi', 'Shevi\'i', 'Maftir']
-
-
-# ── Fetch & cache weekly parasha once at startup ──────────────────────────────
-def fetch_weekly_parasha():
-    data = requests.get("https://www.sefaria.org/api/calendars").json()
-    result = {}
-    for item in data['calendar_items']:
-        title = item['title']['en']
-        if title == 'Parashat Hashavua':
-            result['parasha'] = {
-                'ref':    item['ref'],
-                'name':   item['displayValue']['en'],
-                'aliyot': item.get('extraDetails', {}).get('aliyot', []),
-            }
-        elif title == 'Haftarah':
-            result['haftarah'] = {
-                'ref':    item['ref'],
-                'name':   item['displayValue']['en'],
-                'aliyot': [],
-            }
-    return result
-
-WEEKLY = fetch_weekly_parasha()
+app.secret_key = "leining_secret_123"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 
 
-# ── Text cleaning ─────────────────────────────────────────────────────────────
-# Removes HTML tags, then decodes HTML entities (&thinsp; ׃ &nbsp; etc.)
-# and strips leftover whitespace/punctuation artifacts
-_ENTITY_RE = re.compile(r'&[a-zA-Z]+;|&#\d+;|&#x[0-9a-fA-F]+;')
-_SEFARIA_PUNCT = re.compile(r'[׃]')   # sof pasuk — keep or remove as you like
+# ================================================================== MODELS
+class User(db.Model):
+    id          = db.Column(db.Integer, primary_key=True)
+    username    = db.Column(db.String(80), unique=True, nullable=False)
+    password    = db.Column(db.String(200), nullable=False)
+    role        = db.Column(db.String(10), nullable=False, default="student")
+    class_id    = db.Column(db.String(6), nullable=True)
+    teacher_pin = db.Column(db.String(6), nullable=True)
+
+class ClassID(db.Model):
+    id   = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(6), unique=True, nullable=False)
+
+class StudentClass(db.Model):
+    id       = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False)
+    pin      = db.Column(db.String(6),  nullable=False)
+
+class Assignment(db.Model):
+    id           = db.Column(db.Integer, primary_key=True)
+    username     = db.Column(db.String(80), nullable=False)
+    title        = db.Column(db.String(200), nullable=False)
+    parasha      = db.Column(db.String(100), nullable=False)
+    aliyah       = db.Column(db.String(50), nullable=False)
+    due_date     = db.Column(db.String(50), nullable=True)
+    submitted    = db.Column(db.Boolean, default=False)
+    submitted_at = db.Column(db.DateTime, nullable=True)
+    notes        = db.Column(db.Text, nullable=True)
+    assigned_by  = db.Column(db.String(80), nullable=True)
+    sefaria_ref  = db.Column(db.String(200), nullable=True)  # e.g. "Genesis 6:9-11:32"
+
+
+# ================================================================== SEFARIA HELPERS
+
+# Hebrew aliyah labels
+ALIYAH_NAMES_HE = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שביעי','מפטיר']
+ALIYAH_NAMES_EN = ["Rishon","Sheni","Shlishi","Revi'i","Chamishi","Shishi","Shevi'i","Maftir"]
+
+# Map our parsha dropdown names → Sefaria API parsha names
+SEFARIA_PARSHA_NAME = {
+    "Bereishit":"Bereishit","Noach":"Noach","Lech Lecha":"Lech-Lecha",
+    "Vayeira":"Vayera","Chayei Sarah":"Chayei-Sarah","Toldot":"Toldot",
+    "Vayeitzei":"Vayetzei","Vayishlach":"Vayishlach","Vayeishev":"Vayeshev",
+    "Mikeitz":"Miketz","Vayigash":"Vayigash","Vayechi":"Vayechi",
+    "Shemot":"Shemot","Vaeira":"Vaera","Bo":"Bo","Beshalach":"Beshalach",
+    "Yitro":"Yitro","Mishpatim":"Mishpatim","Terumah":"Terumah",
+    "Tetzaveh":"Tetzaveh","Ki Tisa":"Ki-Tisa","Vayakhel":"Vayakhel","Pekudei":"Pekudei",
+    "Vayikra":"Vayikra","Tzav":"Tzav","Shemini":"Shemini","Tazria":"Tazria",
+    "Metzora":"Metzora","Acharei Mot":"Achrei-Mot","Kedoshim":"Kedoshim",
+    "Emor":"Emor","Behar":"Behar","Bechukotai":"Bechukotai",
+    "Bamidbar":"Bamidbar","Naso":"Nasso","Behaalotecha":"Beha'alotecha",
+    "Shelach":"Sh'lach","Korach":"Korach","Chukat":"Chukat","Balak":"Balak",
+    "Pinchas":"Pinchas","Matot":"Matot","Masei":"Masei",
+    "Devarim":"Devarim","Vaetchanan":"Vaetchanan","Eikev":"Eikev","Re'eh":"Re'eh",
+    "Shoftim":"Shoftim","Ki Teitzei":"Ki-Teitzei","Ki Tavo":"Ki-Tavo",
+    "Nitzavim":"Nitzavim","Vayeilech":"Vayeilech","Haazinu":"Ha'Azinu",
+    "Vezot HaBerachah":"Vezot-Habracha",
+}
+
+# Map our aliyah dropdown labels → 0-based index into the aliyot list
+ALIYAH_INDEX = {
+    "First Aliyah": 0, "Second Aliyah": 1, "Third Aliyah": 2,
+    "Fourth Aliyah": 3, "Fifth Aliyah": 4, "Sixth Aliyah": 5,
+    "Seventh Aliyah": 6, "Maftir": 7, "Haftorah": None,  # haftorah handled separately
+}
 
 def clean_verse(text):
-    if not text:
-        return ''
-    text = re.sub(r'<[^>]+>', '', text)   # strip HTML tags
-    text = unescape(text)                  # decode &nbsp; &thinsp; etc.
-    text = _ENTITY_RE.sub('', text)        # remove any remaining entities
-    text = text.replace('\u00a0', ' ')     # non-breaking space → regular space
-    text = text.replace('\u2009', ' ')     # thin space → regular space
+    """Strip HTML tags, decode entities, normalise whitespace."""
+    if not text: return ''
+    text = re.sub(r'<[^>]+>', '', text)
+    text = unescape(text)
+    text = re.sub(r'&[a-zA-Z]+;|&#\d+;|&#x[0-9a-fA-F]+;', '', text)
+    text = text.replace('\u00a0', ' ').replace('\u2009', ' ')
     return text.strip()
 
 def flatten_verses(node):
-    """Recursively flatten nested Hebrew text into a flat list of verse strings."""
-    if not node:
-        return []
+    """Recursively flatten nested Hebrew text into flat list."""
+    if not node: return []
     if isinstance(node[0], str):
         return [clean_verse(v) for v in node if v]
     return [v for sub in node for v in flatten_verses(sub)]
 
-def get_description(raw):
-    if isinstance(raw, dict):
-        return raw.get('en', '')
-    return raw or ''
-
-
-# ── Parse a ref range into (chapter, start_verse, end_verse) ─────────────────
-def parse_ref_range(ref):
-    """
-    Given e.g. "Exodus 21:1-21:19" or "Exodus 21:1-19",
-    return (chapter, first_verse, last_verse) as ints — all 1-indexed global verse nums
-    handled later when we know chapter offsets.
-    We return the raw ref string too so the template can show it.
-    """
-    return ref  # we resolve to verse indices after fetching
-
-
-# ── Build aliyah boundaries from refs ────────────────────────────────────────
 def ref_to_verse_range(aliyah_ref, chapter_offsets):
-    """
-    Convert an aliyah ref like "Exodus 21:1-21:19" into (start_global, end_global)
-    1-indexed into the flat verses list.
-    chapter_offsets: dict of chapter_num -> first global verse index (1-based)
-    """
-    # Match "Book Ch:V-Ch:V" or "Book Ch:V-V"
+    """Convert a Sefaria ref like 'Genesis 6:9-6:22' into (start, end) global indices."""
     m = re.search(r'(\d+):(\d+)-(\d+):(\d+)', aliyah_ref)
     if not m:
         m2 = re.search(r'(\d+):(\d+)-(\d+)$', aliyah_ref)
         if m2:
-            ch = int(m2.group(1))
-            v_start = int(m2.group(2))
-            v_end   = int(m2.group(3))
-            offset  = chapter_offsets.get(ch, 1)
-            return (offset + v_start - 1, offset + v_end - 1)
+            ch, vs, ve = int(m2.group(1)), int(m2.group(2)), int(m2.group(3))
+            off = chapter_offsets.get(ch, 1)
+            return (off + vs - 1, off + ve - 1)
         return None
+    ch_s, v_s = int(m.group(1)), int(m.group(2))
+    ch_e, v_e = int(m.group(3)), int(m.group(4))
+    return (chapter_offsets.get(ch_s, 1) + v_s - 1,
+            chapter_offsets.get(ch_e, 1) + v_e - 1)
 
-    ch_start = int(m.group(1)); v_start = int(m.group(2))
-    ch_end   = int(m.group(3)); v_end   = int(m.group(4))
-    off_start = chapter_offsets.get(ch_start, 1)
-    off_end   = chapter_offsets.get(ch_end,   1)
-    return (off_start + v_start - 1, off_end + v_end - 1)
-
-
-# ── Main data fetcher ─────────────────────────────────────────────────────────
 def get_section_data(ref, aliyot_refs=None):
     """
-    Returns:
-      verses  – list of {num, text, media_url, description, anchor, aliyah_index}
-      aliyot  – list of {name_he, name_en, start, end}  (1-indexed into verses)
+    Fetch verses + recordings from Sefaria for a given ref.
+    Returns (verses list, aliyot list) ready for parasha.html.
     """
-    # ── Text ──
-    text_data = requests.get(f"https://www.sefaria.org/api/texts/{ref}").json()
-    raw_he    = text_data.get('he', [])
+    try:
+        text_data = requests.get(
+            f"https://www.sefaria.org/api/texts/{ref}",
+            timeout=8
+        ).json()
+    except Exception:
+        return [], []
 
-    # Build chapter offsets so we can map aliyah refs to flat verse indices
-    # raw_he may be [[v,v,...], [v,v,...]] (chapters) or [v,v,...] (single chapter)
+    raw_he = text_data.get('he', [])
+
+    # Build chapter offsets
     chapter_offsets = {}
     global_idx = 1
+    m = re.search(r'(\d+):', ref)
+    first_ch = int(m.group(1)) if m else 1
     if raw_he and isinstance(raw_he[0], list):
-        # multi-chapter
-        first_chapter = text_data.get('textDepth', 2)  # unused
-        # figure out chapter numbering from the ref  e.g. "Exodus 21:1-24:18"
-        m = re.search(r'(\d+):', ref)
-        first_ch = int(m.group(1)) if m else 1
         for ci, ch in enumerate(raw_he):
             chapter_offsets[first_ch + ci] = global_idx
             global_idx += len([v for v in ch if v])
     else:
-        m = re.search(r'(\d+)', ref)
-        chapter_offsets[int(m.group(1)) if m else 1] = 1
+        chapter_offsets[first_ch] = 1
 
     verses_flat = flatten_verses(raw_he)
 
-    # ── Recordings ──
-    media_list = requests.get(
-        f"https://www.sefaria.org/api/related/{ref}"
-    ).json().get('media', [])
+    # Fetch recordings
+    try:
+        media_list = requests.get(
+            f"https://www.sefaria.org/api/related/{ref}",
+            timeout=6
+        ).json().get('media', [])
+    except Exception:
+        media_list = []
 
     recordings_by_verse = {}
     for rec in media_list:
         anchor = rec.get('anchorRef', '')
-        m = re.search(r':(\d+)', anchor)
-        if m:
-            vnum = int(m.group(1))
+        m2 = re.search(r':(\d+)', anchor)
+        if m2:
+            vnum = int(m2.group(1))
             if vnum not in recordings_by_verse:
                 recordings_by_verse[vnum] = {
                     'media_url':   rec.get('media_url', ''),
-                    'description': get_description(rec.get('description', '')),
+                    'description': rec.get('description', ''),
                     'anchor':      anchor,
                 }
 
-    # ── Aliyot boundaries ──
+    # Build aliyot
     aliyot = []
     if aliyot_refs:
         for i, aref in enumerate(aliyot_refs):
             rng = ref_to_verse_range(aref, chapter_offsets)
             if rng:
                 aliyot.append({
-                    'name_he': ALIYAH_NAMES[i]    if i < len(ALIYAH_NAMES)    else f'עלייה {i+1}',
-                    'name_en': ALIYAH_NAMES_EN[i]  if i < len(ALIYAH_NAMES_EN) else f'Aliyah {i+1}',
-                    'start':   rng[0],
-                    'end':     rng[1],
-                    'ref':     aref,
+                    'name_he': ALIYAH_NAMES_HE[i] if i < len(ALIYAH_NAMES_HE) else f'עלייה {i+1}',
+                    'name_en': ALIYAH_NAMES_EN[i] if i < len(ALIYAH_NAMES_EN) else f'Aliyah {i+1}',
+                    'start': rng[0], 'end': rng[1], 'ref': aref,
                 })
 
-    # ── Zip everything ──
+    # Zip verses
     verses = []
     for i, text in enumerate(verses_flat, start=1):
         rec = recordings_by_verse.get(i)
-        # find which aliyah this verse belongs to
-        aliyah_idx = None
-        for ai, al in enumerate(aliyot):
-            if al['start'] <= i <= al['end']:
-                aliyah_idx = ai
-                break
+        aliyah_idx = next((ai for ai, al in enumerate(aliyot)
+                           if al['start'] <= i <= al['end']), None)
         verses.append({
-            'num':         i,
-            'text':        text,
+            'num': i, 'text': text,
             'media_url':   rec['media_url']   if rec else '',
             'description': rec['description'] if rec else '',
             'anchor':      rec['anchor']       if rec else '',
@@ -183,35 +187,374 @@ def get_section_data(ref, aliyot_refs=None):
 
     return verses, aliyot
 
+def fetch_parasha_aliyot(parasha_name):
+    """
+    Ask the Sefaria calendar API for the aliyot refs of a given parasha.
+    Returns list of ref strings, one per aliyah.
+    """
+    try:
+        data = requests.get("https://www.sefaria.org/api/calendars", timeout=6).json()
+        for item in data.get('calendar_items', []):
+            if item['title']['en'] == 'Parashat Hashavua':
+                name_en = item.get('displayValue', {}).get('en', '')
+                sefaria_name = SEFARIA_PARSHA_NAME.get(parasha_name, '')
+                # Accept if it matches OR just return whatever is current (for preview)
+                return item.get('extraDetails', {}).get('aliyot', [])
+    except Exception:
+        pass
+    return []
 
-# ── Routes ────────────────────────────────────────────────────────────────────
-@app.route('/')
-def index():
-    return render_template('index.html', weekly=WEEKLY)
+def build_sefaria_ref(parasha, aliyah_label):
+    """
+    Given parasha name + aliyah label, return the Sefaria ref string for that aliyah.
+    Uses the calendar API to get real refs.
+    Returns (ref_string, display_name) or (None, None) on failure.
+    """
+    aliyot_refs = fetch_parasha_aliyot(parasha)
+    idx = ALIYAH_INDEX.get(aliyah_label)
+    if idx is None or not aliyot_refs or idx >= len(aliyot_refs):
+        # Fallback: just use the parasha name as the ref
+        sname = SEFARIA_PARSHA_NAME.get(parasha, parasha)
+        return sname, parasha
+    ref = aliyot_refs[idx]
+    return ref, f"{parasha} – {aliyah_label}"
 
 
-@app.route('/read')
-def read():
-    ref        = request.args.get('ref')
-    name       = request.args.get('name', ref)
-    aliyot_key = request.args.get('section')   # 'parasha' or 'haftarah'
+# ================================================================== GENERAL HELPERS
+def generate_pin():
+    while True:
+        pin = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        if not User.query.filter_by(teacher_pin=pin).first() and \
+           not ClassID.query.filter_by(code=pin).first():
+            return pin
 
+def enroll_student(username, pin):
+    if not StudentClass.query.filter_by(username=username, pin=pin).first():
+        db.session.add(StudentClass(username=username, pin=pin))
+
+
+# ================================================================== SEED
+with app.app_context():
+    db.create_all()
+    for code in ["ABC123", "XYZ789"]:
+        if not ClassID.query.filter_by(code=code).first():
+            db.session.add(ClassID(code=code))
+    if not User.query.filter_by(username="Rabbi_Cohen").first():
+        db.session.add(User(username="Rabbi_Cohen", password="teach123",
+                            role="teacher", teacher_pin="ABC123"))
+    if not User.query.filter_by(username="Gedaliah").first():
+        db.session.add(User(username="Gedaliah", password="student123",
+                            role="student", class_id="ABC123"))
+    db.session.commit()
+    enroll_student("Gedaliah", "ABC123")
+    db.session.commit()
+
+    gedaliah_assignments = [
+        {"username":"Gedaliah","assigned_by":"Rabbi_Cohen",
+         "title":"Mah Tovu – Morning Blessings","parasha":"Siddur",
+         "aliyah":"Opening Prayers","due_date":"March 14, 2026",
+         "submitted":False,"notes":"","sefaria_ref":None},
+        {"username":"Gedaliah","assigned_by":"Rabbi_Cohen",
+         "title":"Ashrei – Psalm 145","parasha":"Tehillim",
+         "aliyah":"Afternoon Service","due_date":"March 21, 2026",
+         "submitted":False,"notes":"","sefaria_ref":None},
+        {"username":"Gedaliah","assigned_by":"Rabbi_Cohen",
+         "title":"Parshat Lech Lecha – Fifth Aliyah","parasha":"Lech Lecha",
+         "aliyah":"Fifth Aliyah","due_date":"March 28, 2026",
+         "submitted":False,"notes":"","sefaria_ref":"Lech-Lecha"},
+        {"username":"Gedaliah","assigned_by":"Rabbi_Cohen",
+         "title":"Parshat Bereishit – First Aliyah","parasha":"Bereishit",
+         "aliyah":"First Aliyah","due_date":"March 1, 2026",
+         "submitted":True,"submitted_at":datetime(2026,2,28,14,30),
+         "notes":"I practiced this one a lot — felt confident with the trope!",
+         "sefaria_ref":"Bereishit"},
+    ]
+    for a in gedaliah_assignments:
+        if not Assignment.query.filter_by(username=a["username"], title=a["title"]).first():
+            db.session.add(Assignment(**a))
+    db.session.commit()
+
+
+# ================================================================== ROUTES
+
+@app.route("/")
+def home():
+    return render_template("home.html")
+
+@app.route("/register")
+def register():
+    return render_template("register.html")
+
+@app.route("/register/student", methods=["GET","POST"])
+def register_student():
+    error = None
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        password = request.form["password"].strip()
+        if User.query.filter_by(username=username).first():
+            error = "That username is already taken."
+        elif len(password) < 6:
+            error = "Password must be at least 6 characters."
+        else:
+            db.session.add(User(username=username, password=password, role="student"))
+            db.session.commit()
+            session["pending_user"] = username
+            return redirect(url_for("class_id"))
+    return render_template("register_student.html", error=error)
+
+@app.route("/register/teacher", methods=["GET","POST"])
+def register_teacher():
+    error = None
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        password = request.form["password"].strip()
+        if User.query.filter_by(username=username).first():
+            error = "That username is already taken."
+        elif len(password) < 6:
+            error = "Password must be at least 6 characters."
+        else:
+            pin = generate_pin()
+            db.session.add(User(username=username, password=password,
+                                role="teacher", teacher_pin=pin))
+            db.session.add(ClassID(code=pin))
+            db.session.commit()
+            session["username"] = username
+            session["new_pin"]  = pin
+            return redirect(url_for("teacher_dashboard"))
+    return render_template("register_teacher.html", error=error)
+
+@app.route("/login", methods=["GET","POST"])
+def login():
+    error = error_field = None
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        password = request.form["password"].strip()
+        user = User.query.filter_by(username=username).first()
+        if not username and not password:
+            error, error_field = "Please enter your username and password.", "both"
+        elif not user:
+            error, error_field = "We don't recognize that username.", "username"
+        elif user.password != password:
+            error, error_field = "That password is incorrect.", "password"
+        else:
+            session["username"] = username
+            return redirect(url_for("teacher_dashboard" if user.role=="teacher" else "dashboard"))
+    return render_template("login.html", error=error, error_field=error_field)
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("home"))
+
+@app.route("/class-id", methods=["GET","POST"])
+def class_id():
+    error = None
+    username = session.get("pending_user")
+    if not username:
+        return redirect(url_for("register"))
+    if request.method == "POST":
+        entered_id = request.form["class_id"].strip().upper()
+        if not ClassID.query.filter_by(code=entered_id).first():
+            error = "Invalid Class ID. Please check with your teacher."
+        else:
+            user = User.query.filter_by(username=username).first()
+            user.class_id = entered_id
+            enroll_student(username, entered_id)
+            db.session.commit()
+            session.pop("pending_user")
+            session["username"] = username
+            return redirect(url_for("dashboard"))
+    return render_template("class_id.html", error=error, username=username)
+
+@app.route("/add-class", methods=["GET","POST"])
+def add_class():
+    username = session.get("username")
+    if not username: return redirect(url_for("home"))
+    error = success = None
+    if request.method == "POST":
+        entered_id = request.form["class_id"].strip().upper()
+        if not ClassID.query.filter_by(code=entered_id).first():
+            error = "Invalid Class ID. Please check with your teacher."
+        elif StudentClass.query.filter_by(username=username, pin=entered_id).first():
+            error = "You are already enrolled in that class."
+        else:
+            enroll_student(username, entered_id)
+            db.session.commit()
+            success = f"Successfully joined class {entered_id}!"
+    return render_template("add_class.html", username=username, error=error, success=success)
+
+# ------------------------------------------------------------------ STUDENT DASHBOARD
+@app.route("/dashboard")
+def dashboard():
+    username = session.get("username")
+    if not username: return redirect(url_for("home"))
+    user = User.query.filter_by(username=username).first()
+    if user and user.role == "teacher":
+        return redirect(url_for("teacher_dashboard"))
+
+    enrollments = StudentClass.query.filter_by(username=username).all()
+    teacher_sections = []
+    for e in enrollments:
+        teacher = User.query.filter_by(teacher_pin=e.pin, role="teacher").first()
+        if not teacher: continue
+        pending   = Assignment.query.filter_by(username=username, assigned_by=teacher.username, submitted=False).all()
+        completed = Assignment.query.filter_by(username=username, assigned_by=teacher.username, submitted=True).all()
+        teacher_sections.append({"teacher_name": teacher.username, "pin": teacher.teacher_pin,
+                                  "pending": pending, "completed": completed})
+    known = [s["teacher_name"] for s in teacher_sections]
+    op = Assignment.query.filter_by(username=username, submitted=False).filter(
+        ~Assignment.assigned_by.in_(known) if known else Assignment.id > 0).all()
+    oc = Assignment.query.filter_by(username=username, submitted=True).filter(
+        ~Assignment.assigned_by.in_(known) if known else Assignment.id > 0).all()
+    if op or oc:
+        teacher_sections.append({"teacher_name":"Other","pin":"——","pending":op,"completed":oc})
+
+    return render_template("dashboard.html", username=username, teacher_sections=teacher_sections)
+
+# ------------------------------------------------------------------ TEACHER DASHBOARD
+@app.route("/teacher/dashboard")
+def teacher_dashboard():
+    username = session.get("username")
+    if not username: return redirect(url_for("home"))
+    teacher = User.query.filter_by(username=username, role="teacher").first()
+    if not teacher: return redirect(url_for("dashboard"))
+    students = User.query.filter_by(role="student", class_id=teacher.teacher_pin).all()
+    student_data = []
+    for s in students:
+        total     = Assignment.query.filter_by(username=s.username).count()
+        submitted = Assignment.query.filter_by(username=s.username, submitted=True).count()
+        student_data.append({"username":s.username,"total":total,
+                              "submitted":submitted,"pending":total-submitted})
+    new_pin = session.pop("new_pin", None)
+    return render_template("teacher_dashboard.html", teacher=teacher,
+                           student_data=student_data, new_pin=new_pin)
+
+# ------------------------------------------------------------------ ASSIGN WORK
+@app.route("/teacher/assign/<student_username>", methods=["GET","POST"])
+def assign(student_username):
+    username = session.get("username")
+    if not username: return redirect(url_for("home"))
+    teacher = User.query.filter_by(username=username, role="teacher").first()
+    if not teacher: return redirect(url_for("home"))
+    student = User.query.filter_by(username=student_username, role="student").first()
+    if not student: return redirect(url_for("teacher_dashboard"))
+    error = None
+    if request.method == "POST":
+        title    = request.form["title"].strip()
+        parasha  = request.form["parasha"].strip()
+        aliyah   = request.form["aliyah"].strip()
+        due_date = request.form["due_date"].strip()
+        notes    = request.form.get("notes","").strip()
+        if not title or not parasha or not aliyah:
+            error = "Please fill in all required fields."
+        else:
+            # Resolve Sefaria ref for this parasha+aliyah
+            sefaria_ref, _ = build_sefaria_ref(parasha, aliyah)
+            db.session.add(Assignment(
+                username=student_username, title=title, parasha=parasha,
+                aliyah=aliyah, due_date=due_date, assigned_by=username,
+                notes=notes, sefaria_ref=sefaria_ref
+            ))
+            db.session.commit()
+            return redirect(url_for("teacher_dashboard"))
+    existing = Assignment.query.filter_by(username=student_username).all()
+    return render_template("assign.html", teacher=teacher, student=student,
+                           existing=existing, error=error)
+
+# ------------------------------------------------------------------ SEFARIA PREVIEW API
+# Called by JavaScript on the assign page to show a live verse preview
+@app.route("/api/sefaria-preview")
+def sefaria_preview():
+    parasha = request.args.get("parasha","").strip()
+    aliyah  = request.args.get("aliyah","").strip()
+    if not parasha or not aliyah:
+        return jsonify({"error": "Missing parasha or aliyah"}), 400
+
+    aliyot_refs = fetch_parasha_aliyot(parasha)
+    idx = ALIYAH_INDEX.get(aliyah)
+
+    if idx is None:
+        return jsonify({"error": "Haftorah preview not supported yet"}), 400
+    if not aliyot_refs or idx >= len(aliyot_refs):
+        sname = SEFARIA_PARSHA_NAME.get(parasha, parasha)
+        return jsonify({"ref": sname, "verses": [], "note": "Aliyah boundaries unavailable — showing full parasha on the reading page."})
+
+    ref = aliyot_refs[idx]
+    verses, _ = get_section_data(ref)
+    # Return first 6 verses as a preview
+    preview = [{"num": v["num"], "text": v["text"]} for v in verses[:6]]
+    return jsonify({"ref": ref, "verses": preview})
+
+# ------------------------------------------------------------------ READ TEXT (student)
+@app.route("/read/<int:assignment_id>")
+def read_assignment(assignment_id):
+    username = session.get("username")
+    if not username: return redirect(url_for("home"))
+    assignment = Assignment.query.get(assignment_id)
+    if not assignment or assignment.username != username:
+        return redirect(url_for("dashboard"))
+
+    ref = assignment.sefaria_ref
     if not ref:
-        return redirect(url_for('index'))
+        return redirect(url_for("dashboard"))
 
-    aliyot_refs = []
-    if aliyot_key and aliyot_key in WEEKLY:
-        aliyot_refs = WEEKLY[aliyot_key].get('aliyot', [])
-
+    # Fetch aliyot refs for this parasha so we can mark boundaries
+    aliyot_refs = fetch_parasha_aliyot(assignment.parasha)
     verses, aliyot = get_section_data(ref, aliyot_refs)
-    return render_template(
-        'parasha.html',
-        name=name,
-        ref=ref,
-        verses=verses,
-        aliyot=aliyot,
+
+    return render_template("parasha.html",
+        name       = assignment.title,
+        ref        = ref,
+        verses     = verses,
+        aliyot     = aliyot,
+        assignment = assignment
     )
 
+# ------------------------------------------------------------------ SUBMIT / UNSUBMIT / EDIT
+@app.route("/submit/<int:assignment_id>", methods=["POST"])
+def submit_assignment(assignment_id):
+    username = session.get("username")
+    if not username: return redirect(url_for("home"))
+    a = Assignment.query.get(assignment_id)
+    if a and a.username == username:
+        a.submitted = True; a.submitted_at = datetime.now()
+        db.session.commit()
+    return redirect(url_for("congratulations", assignment_id=assignment_id))
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+@app.route("/unsubmit/<int:assignment_id>", methods=["POST"])
+def unsubmit_assignment(assignment_id):
+    username = session.get("username")
+    if not username: return redirect(url_for("home"))
+    a = Assignment.query.get(assignment_id)
+    if a and a.username == username:
+        a.submitted = False; a.submitted_at = None
+        db.session.commit()
+    return redirect(url_for("dashboard"))
+
+@app.route("/edit/<int:assignment_id>", methods=["GET","POST"])
+def edit_assignment(assignment_id):
+    username = session.get("username")
+    if not username: return redirect(url_for("home"))
+    a = Assignment.query.get(assignment_id)
+    if not a or a.username != username: return redirect(url_for("dashboard"))
+    if request.method == "POST":
+        a.notes = request.form["notes"].strip()
+        db.session.commit()
+        return redirect(url_for("dashboard"))
+    return render_template("edit_assignment.html", assignment=a, username=username)
+
+@app.route("/congratulations/<int:assignment_id>")
+def congratulations(assignment_id):
+    username = session.get("username")
+    if not username: return redirect(url_for("home"))
+    a = Assignment.query.get(assignment_id)
+    return render_template("congratulations.html", username=username, assignment=a)
+
+@app.route("/resources")
+def resources():
+    username = session.get("username")
+    if not username: return redirect(url_for("home"))
+    return render_template("resources.html", username=username)
+
+if __name__ == "__main__":
+    app.run(debug=True)

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard – Leining App</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background-color: #f5f0e8; min-height: 100vh; }
+
+        /* ── Nav ── */
+        nav {
+            background-color: #2c3e50;
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav h1 { font-size: 20px; }
+        .nav-right { display: flex; gap: 10px; align-items: center; }
+        .nav-right span { font-size: 14px; opacity: 0.8; }
+        .btn-nav { padding: 8px 14px; border-radius: 5px; text-decoration: none; font-size: 13px; color: white; white-space: nowrap; }
+        .btn-addclass  { background-color: #27ae60; }
+        .btn-addclass:hover  { background-color: #1e8449; }
+        .btn-resources { background-color: #f39c12; }
+        .btn-resources:hover { background-color: #d68910; }
+        .btn-logout    { background-color: #c0392b; }
+        .btn-logout:hover    { background-color: #a93226; }
+
+        /* ── Container ── */
+        .container { max-width: 800px; margin: 36px auto; padding: 0 24px; }
+        .welcome  { font-size: 26px; color: #2c3e50; margin-bottom: 6px; }
+        .subtitle { color: #777; margin-bottom: 28px; font-size: 15px; }
+
+        /* ── Teacher accordion ── */
+        .teacher-block { margin-bottom: 20px; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.09); }
+
+        .teacher-header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 16px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .teacher-header:hover { background-color: #243342; }
+        .teacher-header-left h2 { font-size: 17px; margin-bottom: 3px; }
+        .teacher-pin { font-size: 12px; opacity: 0.7; letter-spacing: 1px; }
+        .chevron { font-size: 18px; transition: transform 0.25s; }
+        .chevron.open { transform: rotate(180deg); }
+
+        .teacher-body {
+            background: #fafafa;
+            display: none;
+            padding: 20px 22px;
+        }
+        .teacher-body.open { display: block; }
+
+        /* ── Section titles inside accordion ── */
+        .section-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #2c3e50;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+            margin-top: 18px;
+        }
+        .section-title:first-child { margin-top: 0; }
+
+        /* ── Assignment cards ── */
+        .assignment-card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+        }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .assignment-info h3 { font-size: 16px; color: #2c3e50; margin-bottom: 3px; }
+        .assignment-info p  { font-size: 12px; color: #888; }
+        .card-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+        .btn-submit { padding: 8px 14px; background-color: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; }
+        .btn-submit:hover { background-color: #1e8449; }
+        .btn-edit   { padding: 8px 14px; background-color: #2980b9; color: white; border-radius: 5px; font-size: 13px; text-decoration: none; display: inline-block; }
+        .btn-edit:hover { background-color: #1f6391; }
+
+        .notes-preview { font-size: 12px; color: #666; background: #f4f4f4; border-left: 3px solid #ddd; padding: 5px 9px; border-radius: 3px; margin-top: 6px; font-style: italic; }
+
+        /* ── Completed cards ── */
+        .completed-card { background: white; border-radius: 8px; padding: 14px 20px; margin-bottom: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.05); }
+        .completed-top  { display: flex; justify-content: space-between; align-items: center; }
+        .completed-card h3 { font-size: 14px; color: #555; margin-bottom: 3px; }
+        .completed-card p  { font-size: 11px; color: #aaa; }
+        .completed-right   { display: flex; align-items: center; gap: 10px; }
+        .checkmark { font-size: 20px; color: #27ae60; }
+        .btn-unsubmit   { padding: 6px 12px; background-color: #e67e22; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        .btn-unsubmit:hover { background-color: #ca6f1e; }
+        .btn-edit-small { padding: 6px 12px; background-color: #2980b9; color: white; border-radius: 5px; font-size: 12px; text-decoration: none; display: inline-block; }
+        .btn-edit-small:hover { background-color: #1f6391; }
+
+        .empty-msg { color: #bbb; font-style: italic; font-size: 13px; margin-bottom: 10px; }
+
+        /* ── No classes at all ── */
+        .no-classes { background: white; border-radius: 10px; padding: 36px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+        .no-classes p { color: #888; margin-bottom: 16px; }
+        .btn-join { display: inline-block; padding: 11px 24px; background-color: #27ae60; color: white; border-radius: 6px; text-decoration: none; font-size: 15px; }
+
+        /* ── Modals ── */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; border-radius: 12px; padding: 36px 40px; text-align: center; max-width: 380px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+        .modal h2 { font-size: 22px; color: #2c3e50; margin-bottom: 10px; }
+        .modal p  { font-size: 15px; color: #666; margin-bottom: 28px; }
+        .modal-btns { display: flex; gap: 12px; justify-content: center; }
+        .modal-confirm { padding: 10px 24px; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; color: white; }
+        .modal-confirm.green  { background-color: #27ae60; }
+        .modal-confirm.green:hover  { background-color: #1e8449; }
+        .modal-confirm.orange { background-color: #e67e22; }
+        .modal-confirm.orange:hover { background-color: #ca6f1e; }
+        .modal-cancel { padding: 10px 24px; background: #eee; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; color: #555; }
+        .modal-cancel:hover { background: #ddd; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h1>Leining Review App</h1>
+        <div class="nav-right">
+            <span>Shalom, {{ username }}!</span>
+            <a href="/add-class" class="btn-nav btn-addclass">+ Join a Class</a>
+            <a href="/resources" class="btn-nav btn-resources">Resources</a>
+            <a href="/logout"    class="btn-nav btn-logout">Log Out</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <p class="welcome">My Assignments</p>
+        <p class="subtitle">Your classes are shown below. Click a class to expand its assignments.</p>
+
+        {% if teacher_sections %}
+            {% for section in teacher_sections %}
+            <div class="teacher-block">
+
+                <!-- Clickable header -->
+                <div class="teacher-header" onclick="toggleSection(this)">
+                    <div class="teacher-header-left">
+                        <h2>{{ section.teacher_name }}</h2>
+                        <span class="teacher-pin">Class PIN: {{ section.pin }}</span>
+                    </div>
+                    <span class="chevron">&#9660;</span>
+                </div>
+
+                <!-- Collapsible body — first section starts open -->
+                <div class="teacher-body {% if loop.first %}open{% endif %}">
+
+                    <div class="section-title">Pending</div>
+                    {% if section.pending %}
+                        {% for a in section.pending %}
+                        <div class="assignment-card">
+                            <div class="card-top">
+                                <div class="assignment-info">
+                                    <h3>{{ a.title }}</h3>
+                                    <p>{{ a.parasha }} · {{ a.aliyah }} · Due: {{ a.due_date }}</p>
+                                </div>
+                                <div class="card-actions">
+                                    {% if a.sefaria_ref %}
+                                    <a href="/read/{{ a.id }}" class="btn-read">Read Text</a>
+                                    {% endif %}
+                                    <a href="/edit/{{ a.id }}" class="btn-edit">Edit</a>
+                                    <button class="btn-submit" onclick="openSubmitModal({{ a.id }}, '{{ a.title }}')">Submit</button>
+                                </div>
+                            </div>
+                            {% if a.notes %}<div class="notes-preview">{{ a.notes }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="empty-msg">No pending assignments — all caught up!</p>
+                    {% endif %}
+
+                    <div class="section-title">Completed</div>
+                    {% if section.completed %}
+                        {% for a in section.completed %}
+                        <div class="completed-card">
+                            <div class="completed-top">
+                                <div class="assignment-info">
+                                    <h3>{{ a.title }}</h3>
+                                    <p>Submitted {{ a.submitted_at.strftime("%B %d, %Y at %I:%M %p") }}</p>
+                                </div>
+                                <div class="completed-right">
+                                    {% if a.sefaria_ref %}
+                                    <a href="/read/{{ a.id }}" class="btn-read-small">Read Text</a>
+                                    {% endif %}
+                                    <a href="/edit/{{ a.id }}" class="btn-edit-small">Edit</a>
+                                    <button class="btn-unsubmit" onclick="openUnsubmitModal({{ a.id }}, '{{ a.title }}')">Unsubmit</button>
+                                    <span class="checkmark">&#10003;</span>
+                                </div>
+                            </div>
+                            {% if a.notes %}<div class="notes-preview" style="margin-top:8px;">{{ a.notes }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="empty-msg">No completed assignments yet.</p>
+                    {% endif %}
+
+                </div>
+            </div>
+            {% endfor %}
+
+        {% else %}
+            <div class="no-classes">
+                <p>You haven't joined any classes yet.</p>
+                <a href="/add-class" class="btn-join">+ Join a Class</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Submit modal -->
+    <div class="modal-overlay" id="submitModal">
+        <div class="modal">
+            <h2>Submit Assignment?</h2>
+            <p id="submitModalText"></p>
+            <div class="modal-btns">
+                <button class="modal-cancel" onclick="closeModal('submitModal')">Cancel</button>
+                <form id="submitForm" method="POST">
+                    <button type="submit" class="modal-confirm green">Yes, Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unsubmit modal -->
+    <div class="modal-overlay" id="unsubmitModal">
+        <div class="modal">
+            <h2>Unsubmit Assignment?</h2>
+            <p id="unsubmitModalText"></p>
+            <div class="modal-btns">
+                <button class="modal-cancel" onclick="closeModal('unsubmitModal')">Cancel</button>
+                <form id="unsubmitForm" method="POST">
+                    <button type="submit" class="modal-confirm orange">Yes, Unsubmit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSection(header) {
+            const body    = header.nextElementSibling;
+            const chevron = header.querySelector(".chevron");
+            body.classList.toggle("open");
+            chevron.classList.toggle("open");
+        }
+        function openSubmitModal(id, title) {
+            document.getElementById("submitModalText").textContent = `Are you sure you want to submit "${title}"?`;
+            document.getElementById("submitForm").action = `/submit/${id}`;
+            document.getElementById("submitModal").classList.add("active");
+        }
+        function openUnsubmitModal(id, title) {
+            document.getElementById("unsubmitModalText").textContent = `Are you sure you want to unsubmit "${title}"? Your teacher will no longer see it.`;
+            document.getElementById("unsubmitForm").action = `/unsubmit/${id}`;
+            document.getElementById("unsubmitModal").classList.add("active");
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove("active");
+        }
+        document.querySelectorAll(".modal-overlay").forEach(o => {
+            o.addEventListener("click", function(e) { if (e.target === this) closeModal(this.id); });
+        });
+    </script>
+
+</body>
+</html>

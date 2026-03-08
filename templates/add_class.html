@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Join a Class – Leining App</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background-color: #f5f0e8; min-height: 100vh; }
+        nav {
+            background-color: #2c3e50; color: white;
+            padding: 16px 32px; display: flex; justify-content: space-between; align-items: center;
+        }
+        nav h1 { font-size: 20px; }
+        .btn-back { padding: 8px 16px; background-color: #7f8c8d; color: white; border-radius: 5px; text-decoration: none; font-size: 14px; }
+        .btn-back:hover { background-color: #626f70; }
+
+        .container { max-width: 480px; margin: 60px auto; padding: 0 24px; }
+        .card { background: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); text-align: center; }
+        h2 { color: #2c3e50; font-size: 22px; margin-bottom: 8px; }
+        .subtitle { color: #888; font-size: 14px; margin-bottom: 28px; }
+
+        label { display: block; text-align: left; font-weight: bold; color: #2c3e50; font-size: 14px; margin-bottom: 8px; }
+        input[type="text"] {
+            width: 100%; padding: 14px; font-size: 24px;
+            letter-spacing: 8px; text-align: center; text-transform: uppercase;
+            border: 2px solid #ccc; border-radius: 6px;
+        }
+        input[type="text"]:focus { border-color: #2c3e50; outline: none; }
+        .hint { font-size: 12px; color: #aaa; margin-top: 6px; margin-bottom: 24px; }
+
+        .btn-submit { width: 100%; padding: 13px; background-color: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        .btn-submit:hover { background-color: #1e8449; }
+
+        .error-box   { background: #fdf0ef; border: 1.5px solid #e74c3c; border-radius: 6px; padding: 12px; color: #c0392b; font-size: 14px; margin-bottom: 16px; }
+        .success-box { background: #eafaf1; border: 1.5px solid #27ae60; border-radius: 6px; padding: 12px; color: #1e8449; font-size: 14px; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <h1>Leining Review App</h1>
+        <a href="/dashboard" class="btn-back">Back to Dashboard</a>
+    </nav>
+    <div class="container">
+        <div class="card">
+            <h2>Join a New Class</h2>
+            <p class="subtitle">Enter the 6-character PIN your teacher gave you.</p>
+
+            {% if error %}   <div class="error-box">{{ error }}</div>   {% endif %}
+            {% if success %} <div class="success-box">{{ success }} <a href="/dashboard">Go to dashboard</a></div> {% endif %}
+
+            <form method="POST">
+                <label for="class_id">Class PIN</label>
+                <input type="text" id="class_id" name="class_id" placeholder="ABC123" maxlength="6" required />
+                <p class="hint">6 characters — letters and numbers</p>
+                <button type="submit" class="btn-submit">Join Class</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

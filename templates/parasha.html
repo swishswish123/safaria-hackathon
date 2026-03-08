@@ -1,162 +1,166 @@
-{% extends "base.html" %}
-{% block title %}{{ name }} · פרשת השבוע{% endblock %}
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ name }} · Leining App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+  <style>
+    /* Override nav to match our app's style while keeping Sefaria aesthetics */
+    .back-btn {
+      display: flex;
+      align-items: center;
+      padding: 0 1.4rem;
+      color: var(--gold-lt);
+      text-decoration: none;
+      font-family: 'EB Garamond', serif;
+      font-size: 0.95rem;
+      letter-spacing: 0.04em;
+      direction: ltr;
+    }
+    .back-btn:hover { color: white; }
+    .assignment-banner {
+      background: var(--navy);
+      border: 1px solid var(--gold);
+      border-radius: 6px;
+      padding: 12px 20px;
+      margin-bottom: 1.5rem;
+      direction: ltr;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .assignment-banner .banner-title { color: var(--parchment); font-size: 1rem; font-family: 'Frank Ruhl Libre', serif; }
+    .assignment-banner .banner-meta  { color: var(--gold-lt); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+<nav>
+  <ul class="nav-links">
+    <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
+  </ul>
+  <div class="nav-brand"><span>✡</span> Leining App</div>
+</nav>
 
-{% block content %}
-<div class="parasha-header">
-  <h1>{{ name }}</h1>
-  <div class="ref-tag">{{ ref }}</div>
-  {% if aliyot %}
-  <div class="aliyah-nav">
-    Jump to:
-    {% for al in aliyot %}
-    <a class="aliyah-chip" href="#aliyah-{{ loop.index0 }}">{{ al.name_en }}</a>
-    {% endfor %}
-  </div>
-  {% endif %}
-  <div class="legend"><span class="dot"></span> Gold dot = recording available</div>
-</div>
+<div class="page">
 
-{# Pass data to JS #}
-<script>
-  const VERSES  = {{ verses  | tojson }};
-  const ALIYOT  = {{ aliyot  | tojson }};
-</script>
-
-<ul class="verse-list" id="verse-list">
-  {% for v in verses %}
-
-  {# Insert aliyah header before first verse of each aliyah #}
-  {% if aliyot %}
-    {% for al in aliyot %}
-      {% if al.start == v.num %}
-      <li class="aliyah-header" id="aliyah-{{ loop.index0 }}">
-        <span class="aliyah-he">{{ al.name_he }}</span>
-        <span class="aliyah-en">{{ al.name_en }}</span>
-        <span class="aliyah-ref">{{ al.ref }}</span>
-      </li>
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-
-  <li class="verse-item {% if v.media_url %}has-recording{% endif %}"
-      id="verse-{{ v.num }}"
-      onclick="jumpTo({{ loop.index0 }})">
-    <div class="verse-row">
-      <span class="verse-num">{{ v.num }}</span>
-      <span class="verse-text">{{ v.text }}</span>
+  <!-- Assignment context banner (shown when coming from an assignment) -->
+  {% if assignment %}
+  <div class="assignment-banner">
+    <div>
+      <div class="banner-title">{{ assignment.title }}</div>
+      <div class="banner-meta">{{ assignment.parasha }} · {{ assignment.aliyah }} · Due: {{ assignment.due_date }}</div>
     </div>
-  </li>
-  {% endfor %}
-</ul>
-
-<!-- Sticky player bar -->
-<div class="player-bar">
-  <button class="player-btn" id="btn-prev"  onclick="go(-1)"       title="Previous verse">◀</button>
-  <button class="player-btn" id="btn-play"  onclick="togglePlay()" title="Play / Pause">▶</button>
-  <button class="player-btn" id="btn-next"  onclick="go(+1)"       title="Next verse">▶▶</button>
-  <div class="player-info">
-    <div class="player-verse-label" id="player-label">Click a verse or press ▶ to begin</div>
-    <div class="player-progress"    id="player-progress"></div>
+    {% if assignment.notes %}
+    <div class="banner-meta" style="font-style:italic; max-width:300px;">Teacher note: {{ assignment.notes }}</div>
+    {% endif %}
   </div>
+  {% endif %}
+
+  <div class="parasha-header">
+    <h1>{{ name }}</h1>
+    <div class="ref-tag">{{ ref }}</div>
+    {% if aliyot %}
+    <div class="aliyah-nav">
+      Jump to:
+      {% for al in aliyot %}
+      <a class="aliyah-chip" href="#aliyah-{{ loop.index0 }}">{{ al.name_en }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="legend"><span class="dot"></span> Gold dot = recording available</div>
+  </div>
+
+  <script>
+    const VERSES = {{ verses | tojson }};
+    const ALIYOT = {{ aliyot | tojson }};
+  </script>
+
+  <ul class="verse-list" id="verse-list">
+    {% for v in verses %}
+
+      {% if aliyot %}
+        {% for al in aliyot %}
+          {% if al.start == v.num %}
+          <li class="aliyah-header" id="aliyah-{{ loop.index0 }}">
+            <span class="aliyah-he">{{ al.name_he }}</span>
+            <span class="aliyah-en">{{ al.name_en }}</span>
+            <span class="aliyah-ref">{{ al.ref }}</span>
+          </li>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      <li class="verse-item {% if v.media_url %}has-recording{% endif %}"
+          id="verse-{{ v.num }}"
+          onclick="jumpTo({{ loop.index0 }})">
+        <div class="verse-row">
+          <span class="verse-num">{{ v.num }}</span>
+          <span class="verse-text">{{ v.text }}</span>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <!-- Sticky player bar -->
+  <div class="player-bar">
+    <button class="player-btn" id="btn-prev"  onclick="go(-1)"        title="Previous">&#9664;</button>
+    <button class="player-btn" id="btn-play"  onclick="togglePlay()"  title="Play/Pause">&#9654;</button>
+    <button class="player-btn" id="btn-next"  onclick="go(+1)"        title="Next">&#9654;&#9654;</button>
+    <div class="player-info">
+      <div class="player-verse-label" id="player-label">Click a verse or press Play to begin</div>
+      <div class="player-progress"    id="player-progress"></div>
+    </div>
+  </div>
+
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
-// ── State ────────────────────────────────────────────────────────────────────
-let idx     = 0;       // current index into VERSES[]
-let audio   = null;
-let paused  = false;   // true = user paused mid-verse
+  let idx = 0, audio = null, paused = false;
+  const btnPlay = document.getElementById('btn-play');
+  const labelEl = document.getElementById('player-label');
+  const progressEl = document.getElementById('player-progress');
 
-const btnPlay    = document.getElementById('btn-play');
-const labelEl    = document.getElementById('player-label');
-const progressEl = document.getElementById('player-progress');
-
-// ── UI helpers ────────────────────────────────────────────────────────────────
-function highlight(i) {
-  document.querySelectorAll('.verse-item').forEach(el => el.classList.remove('active'));
-  const li = document.getElementById('verse-' + VERSES[i].num);
-  if (li) {
-    li.classList.add('active');
-    li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  function highlight(i) {
+    document.querySelectorAll('.verse-item').forEach(el => el.classList.remove('active'));
+    const li = document.getElementById('verse-' + VERSES[i].num);
+    if (li) { li.classList.add('active'); li.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
   }
-}
-
-function updateBar() {
-  const v = VERSES[idx];
-  labelEl.textContent    = v.anchor || `Verse ${v.num}`;
-  progressEl.textContent = `${idx + 1} / ${VERSES.length}${v.media_url ? '' : ' · no recording'}`;
-}
-
-// ── Audio control ─────────────────────────────────────────────────────────────
-function stopAudio() {
-  if (audio) { audio.pause(); audio.src = ''; audio = null; }
-}
-
-function playFrom(i) {
-  stopAudio();
-  paused = false;
-  idx = i;
-  highlight(i);
-  updateBar();
-  btnPlay.textContent = '⏸';
-
-  const v = VERSES[i];
-  if (!v.media_url) {
-    // No recording — pause briefly then auto-advance
-    btnPlay.textContent = '⏭';
-    setTimeout(() => advance(), 1400);
-    return;
+  function updateBar() {
+    const v = VERSES[idx];
+    labelEl.textContent    = v.anchor || `Verse ${v.num}`;
+    progressEl.textContent = `${idx + 1} / ${VERSES.length}${v.media_url ? '' : ' · no recording'}`;
   }
-
-  audio = new Audio(v.media_url);
-  audio.onended = advance;
-  audio.onerror = advance;
-  audio.play().catch(advance);
-}
-
-function advance() {
-  if (paused) return;           // don't auto-advance if user paused
-  if (idx < VERSES.length - 1) {
-    playFrom(idx + 1);
-  } else {
-    stopAudio();
-    btnPlay.textContent = '▶';
-    labelEl.textContent = 'Finished! 🎉';
-    progressEl.textContent = '';
+  function stopAudio() {
+    if (audio) { audio.pause(); audio.src = ''; audio = null; }
   }
-}
-
-// ── Controls ──────────────────────────────────────────────────────────────────
-function togglePlay() {
-  if (audio && !audio.paused) {
-    // Currently playing → pause
-    audio.pause();
-    paused = true;
-    btnPlay.textContent = '▶';
-  } else if (audio && audio.paused) {
-    // Resuming paused audio
-    paused = false;
-    audio.play();
+  function playFrom(i) {
+    stopAudio(); paused = false; idx = i;
+    highlight(i); updateBar();
     btnPlay.textContent = '⏸';
-  } else {
-    // Nothing loaded yet → start from current idx
-    playFrom(idx);
+    const v = VERSES[i];
+    if (!v.media_url) { btnPlay.textContent = '⏭'; setTimeout(() => advance(), 1400); return; }
+    audio = new Audio(v.media_url);
+    audio.onended = advance; audio.onerror = advance;
+    audio.play().catch(advance);
   }
-}
+  function advance() {
+    if (paused) return;
+    if (idx < VERSES.length - 1) { playFrom(idx + 1); }
+    else { stopAudio(); btnPlay.textContent = '▶'; labelEl.textContent = 'Finished!'; progressEl.textContent = ''; }
+  }
+  function togglePlay() {
+    if (audio && !audio.paused) { audio.pause(); paused = true; btnPlay.textContent = '▶'; }
+    else if (audio && audio.paused) { paused = false; audio.play(); btnPlay.textContent = '⏸'; }
+    else { playFrom(idx); }
+  }
+  function go(delta) { const n = idx + delta; if (n >= 0 && n < VERSES.length) playFrom(n); }
+  function jumpTo(i) { playFrom(i); }
 
-function go(delta) {
-  const next = idx + delta;
-  if (next >= 0 && next < VERSES.length) playFrom(next);
-}
-
-// Click a verse row to jump directly to it
-function jumpTo(i) {
-  playFrom(i);
-}
-
-// ── Init ──────────────────────────────────────────────────────────────────────
-highlight(0);
-updateBar();
+  highlight(0); updateBar();
 </script>
-{% endblock %}
+</body>
+</html>
