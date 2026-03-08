@@ -1,0 +1,676 @@
+{
+    "Bereshit": {
+        "Bereshit": {
+            "ref": "Genesis 1:1-6:8",
+            "aliyot": [
+                "Genesis 1:1-2:3",
+                "Genesis 2:4-2:19",
+                "Genesis 2:20-3:21",
+                "Genesis 3:22-4:18",
+                "Genesis 4:19-4:22",
+                "Genesis 4:23-5:24",
+                "Genesis 5:25-6:8",
+                "Genesis 6:5-6:8"
+            ]
+        },
+        "Noach": {
+            "ref": "Genesis 6:9-11:32",
+            "aliyot": [
+                "Genesis 6:9-6:22",
+                "Genesis 7:1-7:16",
+                "Genesis 7:17-8:14",
+                "Genesis 8:15-9:7",
+                "Genesis 9:8-9:17",
+                "Genesis 9:18-10:32",
+                "Genesis 11:1-11:32",
+                "Genesis 11:29-11:32"
+            ]
+        },
+        "Lech-Lecha": {
+            "ref": "Genesis 12:1-17:27",
+            "aliyot": [
+                "Genesis 12:1-12:13",
+                "Genesis 12:14-13:4",
+                "Genesis 13:5-13:18",
+                "Genesis 14:1-14:20",
+                "Genesis 14:21-15:6",
+                "Genesis 15:7-17:6",
+                "Genesis 17:7-17:27",
+                "Genesis 17:24-17:27"
+            ]
+        },
+        "Vayera": {
+            "ref": "Genesis 18:1-22:24",
+            "aliyot": [
+                "Genesis 18:1-18:14",
+                "Genesis 18:15-18:33",
+                "Genesis 19:1-19:20",
+                "Genesis 19:21-21:4",
+                "Genesis 21:5-21:21",
+                "Genesis 21:22-21:34",
+                "Genesis 22:1-22:24",
+                "Genesis 22:20-22:24"
+            ]
+        },
+        "Chayei Sara": {
+            "ref": "Genesis 23:1-25:18",
+            "aliyot": [
+                "Genesis 23:1-23:16",
+                "Genesis 23:17-24:9",
+                "Genesis 24:10-24:26",
+                "Genesis 24:27-24:52",
+                "Genesis 24:53-24:67",
+                "Genesis 25:1-25:11",
+                "Genesis 25:12-25:18",
+                "Genesis 25:16-25:18"
+            ]
+        },
+        "Toldot": {
+            "ref": "Genesis 25:19-28:9",
+            "aliyot": [
+                "Genesis 25:19-26:5",
+                "Genesis 26:6-26:12",
+                "Genesis 26:13-26:22",
+                "Genesis 26:23-26:29",
+                "Genesis 26:30-27:27",
+                "Genesis 27:28-28:4",
+                "Genesis 28:5-28:9",
+                "Genesis 28:7-28:9"
+            ]
+        },
+        "Vayetzei": {
+            "ref": "Genesis 28:10-32:3",
+            "aliyot": [
+                "Genesis 28:10-28:22",
+                "Genesis 29:1-29:17",
+                "Genesis 29:18-30:13",
+                "Genesis 30:14-30:27",
+                "Genesis 30:28-31:16",
+                "Genesis 31:17-31:42",
+                "Genesis 31:43-32:3",
+                "Genesis 32:1-32:3"
+            ]
+        },
+        "Vayishlach": {
+            "ref": "Genesis 32:4-36:43",
+            "aliyot": [
+                "Genesis 32:4-32:13",
+                "Genesis 32:14-32:30",
+                "Genesis 32:31-33:5",
+                "Genesis 33:6-33:20",
+                "Genesis 34:1-35:11",
+                "Genesis 35:12-36:19",
+                "Genesis 36:20-36:43",
+                "Genesis 36:40-36:43"
+            ]
+        },
+        "Vayeshev": {
+            "ref": "Genesis 37:1-40:23",
+            "aliyot": [
+                "Genesis 37:1-37:11",
+                "Genesis 37:12-37:22",
+                "Genesis 37:23-37:36",
+                "Genesis 38:1-38:30",
+                "Genesis 39:1-39:6",
+                "Genesis 39:7-39:23",
+                "Genesis 40:1-40:23",
+                "Genesis 40:20-40:23"
+            ]
+        },
+        "Miketz": {
+            "ref": "Genesis 41:1-44:17",
+            "aliyot": [
+                "Genesis 41:1-41:14",
+                "Genesis 41:15-41:38",
+                "Genesis 41:39-41:52",
+                "Genesis 41:53-42:18",
+                "Genesis 42:19-43:15",
+                "Genesis 43:16-43:29",
+                "Genesis 43:30-44:17",
+                "Numbers 28:9-28:15",
+                "Numbers 7:42-7:47"
+            ]
+        },
+        "Vayigash": {
+            "ref": "Genesis 44:18-47:27",
+            "aliyot": [
+                "Genesis 44:18-44:30",
+                "Genesis 44:31-45:7",
+                "Genesis 45:8-45:18",
+                "Genesis 45:19-45:27",
+                "Genesis 45:28-46:27",
+                "Genesis 46:28-47:10",
+                "Genesis 47:11-47:27",
+                "Genesis 47:25-47:27"
+            ]
+        },
+        "Vayechi": {
+            "ref": "Genesis 47:28-50:26",
+            "aliyot": [
+                "Genesis 47:28-48:9",
+                "Genesis 48:10-48:16",
+                "Genesis 48:17-48:22",
+                "Genesis 49:1-49:18",
+                "Genesis 49:19-49:26",
+                "Genesis 49:27-50:20",
+                "Genesis 50:21-50:26",
+                "Genesis 50:23-50:26"
+            ]
+        },
+        "Rosh Hashana I": {
+            "ref": "Genesis 21:1-34",
+            "aliyot": [
+                "Genesis 21:1-21:4",
+                "Genesis 21:5-21:8",
+                "Genesis 21:9-21:12",
+                "Genesis 21:13-21:17",
+                "Genesis 21:18-21:21",
+                "Genesis 21:22-21:27",
+                "Genesis 21:28-21:34",
+                "Numbers 29:1-29:6"
+            ]
+        }
+    },
+    "Shemot": {
+        "Shemot": {
+            "ref": "Exodus 1:1-6:1",
+            "aliyot": [
+                "Exodus 1:1-1:17",
+                "Exodus 1:18-2:10",
+                "Exodus 2:11-2:25",
+                "Exodus 3:1-3:15",
+                "Exodus 3:16-4:17",
+                "Exodus 4:18-4:31",
+                "Exodus 5:1-6:1",
+                "Exodus 5:22-6:1"
+            ]
+        },
+        "Vaera": {
+            "ref": "Exodus 6:2-9:35",
+            "aliyot": [
+                "Exodus 6:2-6:13",
+                "Exodus 6:14-6:28",
+                "Exodus 6:29-7:7",
+                "Exodus 7:8-8:6",
+                "Exodus 8:7-8:18",
+                "Exodus 8:19-9:16",
+                "Exodus 9:17-9:35",
+                "Exodus 9:33-9:35"
+            ]
+        },
+        "Bo": {
+            "ref": "Exodus 10:1-13:16",
+            "aliyot": [
+                "Exodus 10:1-10:11",
+                "Exodus 10:12-10:23",
+                "Exodus 10:24-11:3",
+                "Exodus 11:4-12:20",
+                "Exodus 12:21-12:28",
+                "Exodus 12:29-12:51",
+                "Exodus 13:1-13:16",
+                "Exodus 13:14-13:16"
+            ]
+        },
+        "Beshalach": {
+            "ref": "Exodus 13:17-17:16",
+            "aliyot": [
+                "Exodus 13:17-14:8",
+                "Exodus 14:9-14:14",
+                "Exodus 14:15-14:25",
+                "Exodus 14:26-15:26",
+                "Exodus 15:27-16:10",
+                "Exodus 16:11-16:36",
+                "Exodus 17:1-17:16",
+                "Exodus 17:14-17:16"
+            ]
+        },
+        "Yitro": {
+            "ref": "Exodus 18:1-20:23",
+            "aliyot": [
+                "Exodus 18:1-18:12",
+                "Exodus 18:13-18:23",
+                "Exodus 18:24-18:27",
+                "Exodus 19:1-19:6",
+                "Exodus 19:7-19:19",
+                "Exodus 19:20-20:14",
+                "Exodus 20:15-20:23",
+                "Exodus 20:19-20:23"
+            ]
+        },
+        "Mishpatim": {
+            "ref": "Exodus 21:1-24:18",
+            "aliyot": [
+                "Exodus 21:1-21:19",
+                "Exodus 21:20-22:3",
+                "Exodus 22:4-22:26",
+                "Exodus 22:27-23:5",
+                "Exodus 23:6-23:19",
+                "Exodus 23:20-23:25",
+                "Exodus 23:26-24:18",
+                "Exodus 30:11-30:16"
+            ]
+        },
+        "Terumah": {
+            "ref": "Exodus 25:1-27:19",
+            "aliyot": [
+                "Exodus 25:1-25:16",
+                "Exodus 25:17-25:30",
+                "Exodus 25:31-26:14",
+                "Exodus 26:15-26:30",
+                "Exodus 26:31-26:37",
+                "Exodus 27:1-27:8",
+                "Exodus 27:9-27:19",
+                "Exodus 27:17-27:19"
+            ]
+        },
+        "Tetzaveh": {
+            "ref": "Exodus 27:20-30:10",
+            "aliyot": [
+                "Exodus 27:20-28:12",
+                "Exodus 28:13-28:30",
+                "Exodus 28:31-28:43",
+                "Exodus 29:1-29:18",
+                "Exodus 29:19-29:37",
+                "Exodus 29:38-29:46",
+                "Exodus 30:1-30:10",
+                "Deuteronomy 25:17-25:19"
+            ]
+        },
+        "Ki Tisa": {
+            "ref": "Exodus 30:11-34:35",
+            "aliyot": [
+                "Exodus 30:11-31:17",
+                "Exodus 31:18-33:11",
+                "Exodus 33:12-33:16",
+                "Exodus 33:17-33:23",
+                "Exodus 34:1-34:9",
+                "Exodus 34:10-34:26",
+                "Exodus 34:27-34:35",
+                "Numbers 19:1-19:22"
+            ]
+        },
+        "Vayakhel-Pekudei": {
+            "ref": "Exodus 35:1-40:38",
+            "aliyot": [
+                "Exodus 35:1-35:29",
+                "Exodus 35:30-37:16",
+                "Exodus 37:17-37:29",
+                "Exodus 38:1-39:1",
+                "Exodus 39:2-39:21",
+                "Exodus 39:22-39:43",
+                "Exodus 40:1-40:38",
+                "Exodus 12:1-12:20"
+            ]
+        },
+        "Pesach Shabbat Chol haMoed": {
+            "ref": "Exodus 33:12-34:26",
+            "aliyot": [
+                "Exodus 33:12-33:16",
+                "Exodus 33:17-33:19",
+                "Exodus 33:20-33:23",
+                "Exodus 34:1-34:3",
+                "Exodus 34:4-34:10",
+                "Exodus 34:11-34:17",
+                "Exodus 34:18-34:26",
+                "Numbers 28:19-28:25"
+            ]
+        }
+    },
+    "Vayikra": {
+        "Vayikra": {
+            "ref": "Leviticus 1:1-5:26",
+            "aliyot": [
+                "Leviticus 1:1-1:13",
+                "Leviticus 1:14-2:6",
+                "Leviticus 2:7-2:16",
+                "Leviticus 3:1-3:17",
+                "Leviticus 4:1-4:26",
+                "Leviticus 4:27-5:10",
+                "Leviticus 5:11-5:26",
+                "Leviticus 5:24-5:26"
+            ]
+        },
+        "Tzav": {
+            "ref": "Leviticus 6:1-8:36",
+            "aliyot": [
+                "Leviticus 6:1-6:11",
+                "Leviticus 6:12-7:10",
+                "Leviticus 7:11-7:38",
+                "Leviticus 8:1-8:13",
+                "Leviticus 8:14-8:21",
+                "Leviticus 8:22-8:29",
+                "Leviticus 8:30-8:36",
+                "Leviticus 8:33-8:36"
+            ]
+        },
+        "Shmini": {
+            "ref": "Leviticus 9:1-11:47",
+            "aliyot": [
+                "Leviticus 9:1-9:16",
+                "Leviticus 9:17-9:23",
+                "Leviticus 9:24-10:11",
+                "Leviticus 10:12-10:15",
+                "Leviticus 10:16-10:20",
+                "Leviticus 11:1-11:32",
+                "Leviticus 11:33-11:47",
+                "Leviticus 11:45-11:47"
+            ]
+        },
+        "Tazria-Metzora": {
+            "ref": "Leviticus 12:1-15:33",
+            "aliyot": [
+                "Leviticus 12:1-13:23",
+                "Leviticus 13:24-13:39",
+                "Leviticus 13:40-13:54",
+                "Leviticus 13:55-14:20",
+                "Leviticus 14:21-14:32",
+                "Leviticus 14:33-15:15",
+                "Leviticus 15:16-15:33",
+                "Numbers 28:9-28:15"
+            ]
+        },
+        "Achrei Mot-Kedoshim": {
+            "ref": "Leviticus 16:1-20:27",
+            "aliyot": [
+                "Leviticus 16:1-16:24",
+                "Leviticus 16:25-17:7",
+                "Leviticus 17:8-18:21",
+                "Leviticus 18:22-19:14",
+                "Leviticus 19:15-19:32",
+                "Leviticus 19:33-20:7",
+                "Leviticus 20:8-20:27",
+                "Leviticus 20:25-20:27"
+            ]
+        },
+        "Emor": {
+            "ref": "Leviticus 21:1-24:23",
+            "aliyot": [
+                "Leviticus 21:1-21:15",
+                "Leviticus 21:16-22:16",
+                "Leviticus 22:17-22:33",
+                "Leviticus 23:1-23:22",
+                "Leviticus 23:23-23:32",
+                "Leviticus 23:33-23:44",
+                "Leviticus 24:1-24:23",
+                "Leviticus 24:21-24:23"
+            ]
+        },
+        "Behar-Bechukotai": {
+            "ref": "Leviticus 25:1-27:34",
+            "aliyot": [
+                "Leviticus 25:1-25:18",
+                "Leviticus 25:19-25:28",
+                "Leviticus 25:29-25:38",
+                "Leviticus 25:39-26:9",
+                "Leviticus 26:10-26:46",
+                "Leviticus 27:1-27:15",
+                "Leviticus 27:16-27:34",
+                "Leviticus 27:32-27:34"
+            ]
+        },
+        "Sukkot I": {
+            "ref": "Leviticus 22:26-23:44",
+            "aliyot": [
+                "Leviticus 22:26-22:33",
+                "Leviticus 23:1-23:3",
+                "Leviticus 23:4-23:8",
+                "Leviticus 23:9-23:14",
+                "Leviticus 23:15-23:22",
+                "Leviticus 23:23-23:32",
+                "Leviticus 23:33-23:44",
+                "Numbers 29:12-29:16"
+            ]
+        }
+    },
+    "Bamidbar": {
+        "Bamidbar": {
+            "ref": "Numbers 1:1-4:20",
+            "aliyot": [
+                "Numbers 1:1-1:19",
+                "Numbers 1:20-1:54",
+                "Numbers 2:1-2:34",
+                "Numbers 3:1-3:13",
+                "Numbers 3:14-3:39",
+                "Numbers 3:40-3:51",
+                "Numbers 4:1-4:20",
+                "Numbers 4:17-4:20"
+            ]
+        },
+        "Nasso": {
+            "ref": "Numbers 4:21-7:89",
+            "aliyot": [
+                "Numbers 4:21-4:37",
+                "Numbers 4:38-4:49",
+                "Numbers 5:1-5:10",
+                "Numbers 5:11-6:27",
+                "Numbers 7:1-7:41",
+                "Numbers 7:42-7:71",
+                "Numbers 7:72-7:89",
+                "Numbers 7:87-7:89"
+            ]
+        },
+        "Beha'alotcha": {
+            "ref": "Numbers 8:1-12:16",
+            "aliyot": [
+                "Numbers 8:1-8:14",
+                "Numbers 8:15-8:26",
+                "Numbers 9:1-9:14",
+                "Numbers 9:15-10:10",
+                "Numbers 10:11-10:34",
+                "Numbers 10:35-11:29",
+                "Numbers 11:30-12:16",
+                "Numbers 12:14-12:16"
+            ]
+        },
+        "Sh'lach": {
+            "ref": "Numbers 13:1-15:41",
+            "aliyot": [
+                "Numbers 13:1-13:20",
+                "Numbers 13:21-14:7",
+                "Numbers 14:8-14:25",
+                "Numbers 14:26-15:7",
+                "Numbers 15:8-15:16",
+                "Numbers 15:17-15:26",
+                "Numbers 15:27-15:41",
+                "Numbers 15:37-15:41"
+            ]
+        },
+        "Korach": {
+            "ref": "Numbers 16:1-18:32",
+            "aliyot": [
+                "Numbers 16:1-16:13",
+                "Numbers 16:14-16:19",
+                "Numbers 16:20-17:8",
+                "Numbers 17:9-17:15",
+                "Numbers 17:16-17:24",
+                "Numbers 17:25-18:20",
+                "Numbers 18:21-18:32",
+                "Numbers 18:30-18:32"
+            ]
+        },
+        "Chukat-Balak": {
+            "ref": "Numbers 19:1-25:9",
+            "aliyot": [
+                "Numbers 19:1-20:6",
+                "Numbers 20:7-20:21",
+                "Numbers 20:22-21:20",
+                "Numbers 21:21-22:12",
+                "Numbers 22:13-22:38",
+                "Numbers 22:39-23:26",
+                "Numbers 23:27-25:9",
+                "Numbers 25:7-25:9"
+            ]
+        },
+        "Pinchas": {
+            "ref": "Numbers 25:10-30:1",
+            "aliyot": [
+                "Numbers 25:10-26:4",
+                "Numbers 26:5-26:51",
+                "Numbers 26:52-27:5",
+                "Numbers 27:6-27:23",
+                "Numbers 28:1-28:15",
+                "Numbers 28:16-29:11",
+                "Numbers 29:12-30:1",
+                "Numbers 29:35-30:1"
+            ]
+        },
+        "Matot-Masei": {
+            "ref": "Numbers 30:2-36:13",
+            "aliyot": [
+                "Numbers 30:2-31:12",
+                "Numbers 31:13-31:54",
+                "Numbers 32:1-32:19",
+                "Numbers 32:20-33:49",
+                "Numbers 33:50-34:15",
+                "Numbers 34:16-35:8",
+                "Numbers 35:9-36:13",
+                "Numbers 36:11-36:13"
+            ]
+        }
+    },
+    "Devarim": {
+        "Shavuot II": {
+            "ref": "Deuteronomy 14:22-16:17",
+            "aliyot": [
+                "Deuteronomy 14:22-14:29",
+                "Deuteronomy 15:1-15:18",
+                "Deuteronomy 15:19-15:23",
+                "Deuteronomy 16:1-16:3",
+                "Deuteronomy 16:4-16:8",
+                "Deuteronomy 16:9-16:12",
+                "Deuteronomy 16:13-16:17",
+                "Numbers 28:26-28:31"
+            ]
+        },
+        "Devarim": {
+            "ref": "Deuteronomy 1:1-3:22",
+            "aliyot": [
+                "Deuteronomy 1:1-1:10",
+                "Deuteronomy 1:11-1:21",
+                "Deuteronomy 1:22-1:38",
+                "Deuteronomy 1:39-2:1",
+                "Deuteronomy 2:2-2:30",
+                "Deuteronomy 2:31-3:14",
+                "Deuteronomy 3:15-3:22",
+                "Deuteronomy 3:20-3:22"
+            ]
+        },
+        "Vaetchanan": {
+            "ref": "Deuteronomy 3:23-7:11",
+            "aliyot": [
+                "Deuteronomy 3:23-4:4",
+                "Deuteronomy 4:5-4:40",
+                "Deuteronomy 4:41-4:49",
+                "Deuteronomy 5:1-5:18",
+                "Deuteronomy 5:19-6:3",
+                "Deuteronomy 6:4-6:25",
+                "Deuteronomy 7:1-7:11",
+                "Deuteronomy 7:9-7:11"
+            ]
+        },
+        "Eikev": {
+            "ref": "Deuteronomy 7:12-11:25",
+            "aliyot": [
+                "Deuteronomy 7:12-8:10",
+                "Deuteronomy 8:11-9:3",
+                "Deuteronomy 9:4-9:29",
+                "Deuteronomy 10:1-10:11",
+                "Deuteronomy 10:12-11:9",
+                "Deuteronomy 11:10-11:21",
+                "Deuteronomy 11:22-11:25",
+                "Deuteronomy 11:22-11:25"
+            ]
+        },
+        "Re'eh": {
+            "ref": "Deuteronomy 11:26-16:17",
+            "aliyot": [
+                "Deuteronomy 11:26-12:10",
+                "Deuteronomy 12:11-12:28",
+                "Deuteronomy 12:29-13:19",
+                "Deuteronomy 14:1-14:21",
+                "Deuteronomy 14:22-14:29",
+                "Deuteronomy 15:1-15:18",
+                "Deuteronomy 15:19-16:17",
+                "Deuteronomy 16:13-16:17"
+            ]
+        },
+        "Shoftim": {
+            "ref": "Deuteronomy 16:18-21:9",
+            "aliyot": [
+                "Deuteronomy 16:18-17:13",
+                "Deuteronomy 17:14-17:20",
+                "Deuteronomy 18:1-18:5",
+                "Deuteronomy 18:6-18:13",
+                "Deuteronomy 18:14-19:13",
+                "Deuteronomy 19:14-20:9",
+                "Deuteronomy 20:10-21:9",
+                "Deuteronomy 21:7-21:9"
+            ]
+        },
+        "Ki Teitzei": {
+            "ref": "Deuteronomy 21:10-25:19",
+            "aliyot": [
+                "Deuteronomy 21:10-21:21",
+                "Deuteronomy 21:22-22:7",
+                "Deuteronomy 22:8-23:7",
+                "Deuteronomy 23:8-23:24",
+                "Deuteronomy 23:25-24:4",
+                "Deuteronomy 24:5-24:13",
+                "Deuteronomy 24:14-25:19",
+                "Deuteronomy 25:17-25:19"
+            ]
+        },
+        "Ki Tavo": {
+            "ref": "Deuteronomy 26:1-29:8",
+            "aliyot": [
+                "Deuteronomy 26:1-26:11",
+                "Deuteronomy 26:12-26:15",
+                "Deuteronomy 26:16-26:19",
+                "Deuteronomy 27:1-27:10",
+                "Deuteronomy 27:11-28:6",
+                "Deuteronomy 28:7-28:69",
+                "Deuteronomy 29:1-29:8",
+                "Deuteronomy 29:6-29:8"
+            ]
+        },
+        "Nitzavim-Vayeilech": {
+            "ref": "Deuteronomy 29:9-31:30",
+            "aliyot": [
+                "Deuteronomy 29:9-29:28",
+                "Deuteronomy 30:1-30:6",
+                "Deuteronomy 30:7-30:14",
+                "Deuteronomy 30:15-31:6",
+                "Deuteronomy 31:7-31:13",
+                "Deuteronomy 31:14-31:19",
+                "Deuteronomy 31:20-31:30",
+                "Deuteronomy 31:28-31:30"
+            ]
+        },
+        "Ha'Azinu": {
+            "ref": "Deuteronomy 32:1-52",
+            "aliyot": [
+                "Deuteronomy 32:1-32:6",
+                "Deuteronomy 32:7-32:12",
+                "Deuteronomy 32:13-32:18",
+                "Deuteronomy 32:19-32:28",
+                "Deuteronomy 32:29-32:39",
+                "Deuteronomy 32:40-32:43",
+                "Deuteronomy 32:44-32:52",
+                "Deuteronomy 32:48-32:52"
+            ]
+        },
+        "Shmini Atzeret": {
+            "ref": "Deuteronomy 14:22-16:17",
+            "aliyot": [
+                "Deuteronomy 14:22-14:29",
+                "Deuteronomy 15:1-15:18",
+                "Deuteronomy 15:19-15:23",
+                "Deuteronomy 16:1-16:3",
+                "Deuteronomy 16:4-16:8",
+                "Deuteronomy 16:9-16:12",
+                "Deuteronomy 16:13-16:17",
+                "Numbers 29:35-30:1"
+            ]
+        }
+    }
+}
