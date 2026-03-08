@@ -180,6 +180,7 @@
   <script>
     const VERSES        = {{ verses | tojson }};
     const ASSIGNMENT_ID = {{ assignment.id if assignment else 'null' }};
+    const TEACHER_RECORDING = {{ ('"' + '/static/recordings/' + assignment.teacher_recording_filename + '"') | safe if (assignment and assignment.teacher_recording_filename) else 'null' }};
   </script>
 
   <ul class="verse-list" id="verse-list">
@@ -212,8 +213,14 @@
     <button class="player-btn" id="btn-play" onclick="togglePlay()" title="Play / Pause">&#9654;</button>
     <button class="player-btn" id="btn-next" onclick="go(+1)" title="Next pasuk">&#9654;&#9654;</button>
     <div class="player-info">
-      <div class="player-verse-label" id="player-label">Click a pasuk or press Play to begin</div>
-      <div class="player-progress"    id="player-progress"></div>
+      <div class="player-verse-label" id="player-label">
+        {% if assignment and assignment.teacher_recording_filename %}
+          Teacher's recording — press Play to listen
+        {% else %}
+          Click a pasuk or press Play to begin
+        {% endif %}
+      </div>
+      <div class="player-progress" id="player-progress"></div>
     </div>
   </div>
 
@@ -221,59 +228,92 @@
 
 <script>
 // ══════════════════════════════════════════════════════
-// SECTION 1 — Sefaria cantillation player (unchanged logic)
+// SECTION 1 — Playback (Sefaria per-verse OR teacher recording)
 // ══════════════════════════════════════════════════════
 let idx = 0, audio = null, paused = false;
 const btnPlay    = document.getElementById('btn-play');
 const labelEl    = document.getElementById('player-label');
 const progressEl = document.getElementById('player-progress');
 
-function highlight(i) {
-  document.querySelectorAll('.verse-item').forEach(el => el.classList.remove('active'));
-  const li = document.getElementById('verse-' + VERSES[i].num);
-  if (li) { li.classList.add('active'); li.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-}
-function updateBar() {
-  const v = VERSES[idx];
-  const label = (v.chapter && v.verse) ? `Pasuk ${v.chapter}:${v.verse}` : `Pasuk ${v.num}`;
-  labelEl.textContent    = label;
-  progressEl.textContent = `${idx + 1} of ${VERSES.length} pasukim${v.media_url ? '' : ' · no Sefaria recording'}`;
-}
-function stopAudio() {
-  if (audio) { audio.pause(); audio.src = ''; audio = null; }
-}
-function playFrom(i) {
-  stopAudio(); paused = false; idx = i;
-  highlight(i); updateBar();
-  btnPlay.innerHTML = '&#9646;&#9646;';
-  const v = VERSES[i];
-  if (!v.media_url) {
-    btnPlay.innerHTML = '&#9654;&#9654;';
-    setTimeout(() => { if (!paused) advance(); }, 1500);
-    return;
+// ── MODE: teacher recording (single file) ──────────────
+if (TEACHER_RECORDING) {
+  const teacherAudio = new Audio(TEACHER_RECORDING);
+  teacherAudio.preload = 'metadata';
+
+  function fmt(s) {
+    const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2,'0')}`;
   }
-  audio = new Audio(v.media_url);
-  audio.onended = advance;
-  audio.onerror = () => { console.warn('Audio error pasuk', v.num); advance(); };
-  audio.play().catch(advance);
-}
-function advance() {
-  if (paused) return;
-  if (idx < VERSES.length - 1) { playFrom(idx + 1); }
-  else {
-    stopAudio(); btnPlay.innerHTML = '&#9654;';
-    labelEl.textContent = 'Finished! Great job practicing this aliyah.';
+  teacherAudio.addEventListener('timeupdate', () => {
+    if (teacherAudio.duration)
+      progressEl.textContent = `${fmt(teacherAudio.currentTime)} / ${fmt(teacherAudio.duration)}`;
+  });
+  teacherAudio.addEventListener('ended', () => {
+    btnPlay.innerHTML = '&#9654;';
+    labelEl.textContent = 'Finished — great job practicing!';
     progressEl.textContent = '';
+  });
+  teacherAudio.addEventListener('error', () => {
+    progressEl.textContent = 'Could not load teacher recording.';
+    btnPlay.disabled = true;
+  });
+
+  labelEl.textContent    = 'Teacher\'s recording — press Play to listen';
+  progressEl.textContent = '';
+
+  function togglePlay() {
+    if (!teacherAudio.paused) { teacherAudio.pause(); btnPlay.innerHTML = '&#9654;'; }
+    else { teacherAudio.play(); btnPlay.innerHTML = '&#9646;&#9646;'; }
   }
+  // disable prev/next — single file
+  document.getElementById('btn-prev').disabled = true;
+  document.getElementById('btn-next').disabled = true;
+  document.getElementById('btn-prev').style.opacity = '0.3';
+  document.getElementById('btn-next').style.opacity = '0.3';
+
+// ── MODE: Sefaria per-verse ────────────────────────────
+} else {
+  function highlight(i) {
+    document.querySelectorAll('.verse-item').forEach(el => el.classList.remove('active'));
+    const li = document.getElementById('verse-' + VERSES[i].num);
+    if (li) { li.classList.add('active'); li.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  }
+  function updateBar() {
+    const v = VERSES[idx];
+    const label = (v.chapter && v.verse) ? `Pasuk ${v.chapter}:${v.verse}` : `Pasuk ${v.num}`;
+    labelEl.textContent    = label;
+    progressEl.textContent = `${idx + 1} of ${VERSES.length} pasukim${v.media_url ? '' : ' · no Sefaria recording'}`;
+  }
+  function stopAudio() {
+    if (audio) { audio.pause(); audio.src = ''; audio = null; }
+  }
+  function playFrom(i) {
+    stopAudio(); paused = false; idx = i; highlight(i); updateBar();
+    btnPlay.innerHTML = '&#9646;&#9646;';
+    const v = VERSES[i];
+    if (!v.media_url) {
+      btnPlay.innerHTML = '&#9654;&#9654;';
+      setTimeout(() => { if (!paused) advance(); }, 1500); return;
+    }
+    audio = new Audio(v.media_url);
+    audio.onended = advance;
+    audio.onerror = () => { console.warn('Audio error pasuk', v.num); advance(); };
+    audio.play().catch(advance);
+  }
+  function advance() {
+    if (paused) return;
+    if (idx < VERSES.length - 1) { playFrom(idx + 1); }
+    else { stopAudio(); btnPlay.innerHTML = '&#9654;'; labelEl.textContent = 'Finished! Great job practicing this aliyah.'; progressEl.textContent = ''; }
+  }
+  function togglePlay() {
+    if (audio && !audio.paused) { audio.pause(); paused = true; btnPlay.innerHTML = '&#9654;'; }
+    else if (audio && audio.paused) { paused = false; audio.play(); btnPlay.innerHTML = '&#9646;&#9646;'; }
+    else { playFrom(idx); }
+  }
+  function go(delta) { const n = idx + delta; if (n >= 0 && n < VERSES.length) playFrom(n); }
+  function jumpTo(i) { playFrom(i); }
+  highlight(0); updateBar();
 }
-function togglePlay() {
-  if (audio && !audio.paused) { audio.pause(); paused = true; btnPlay.innerHTML = '&#9654;'; }
-  else if (audio && audio.paused) { paused = false; audio.play(); btnPlay.innerHTML = '&#9646;&#9646;'; }
-  else { playFrom(idx); }
-}
-function go(delta) { const n = idx + delta; if (n >= 0 && n < VERSES.length) playFrom(n); }
-function jumpTo(i) { playFrom(i); }
-highlight(0); updateBar();
 
 
 // ══════════════════════════════════════════════════════

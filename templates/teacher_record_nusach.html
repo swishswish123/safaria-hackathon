@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Record Nusach – ScroLein</title>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+  <style>
+    /* ── Nav ── */
+    .back-btn {
+      display: flex; align-items: center; padding: 0 1.4rem;
+      color: var(--gold-lt); text-decoration: none;
+      font-family: 'EB Garamond', serif; font-size: 0.95rem;
+      letter-spacing: 0.04em; direction: ltr;
+    }
+    .back-btn:hover { color: white; }
+
+    /* ── Context banner ── */
+    .context-banner {
+      background: #2c1a47;
+      border: 1px solid #8e44ad;
+      border-radius: 8px;
+      padding: 14px 22px;
+      margin-bottom: 1.2rem;
+      direction: ltr;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+    .cb-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #b39ddb; margin-bottom: 3px; }
+    .cb-name  { color: white; font-family: 'Frank Ruhl Libre', serif; font-size: 1.05rem; font-weight: 700; }
+    .cb-meta  { color: #ce93d8; font-size: 0.83rem; margin-top: 3px; }
+
+    /* ── Recording panel ── */
+    .record-panel {
+      background: white;
+      border: 2px solid #d7bde2;
+      border-radius: 10px;
+      padding: 22px 26px;
+      margin-bottom: 1.5rem;
+      direction: ltr;
+    }
+    .record-panel h3 {
+      font-family: 'Frank Ruhl Libre', serif;
+      font-size: 1.1rem; color: #6c3483; margin-bottom: 16px;
+    }
+    .record-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+    .btn-record {
+      padding: 10px 22px; font-size: 15px; font-family: Arial, sans-serif;
+      border: none; border-radius: 6px; cursor: pointer; font-weight: bold;
+      transition: background 0.15s;
+    }
+    .btn-record.start { background: #c0392b; color: white; }
+    .btn-record.start:hover { background: #a93226; }
+    .btn-record.stop  { background: #7f8c8d; color: white; }
+    .btn-record.stop:hover  { background: #626f70; }
+    .btn-record:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-finish {
+      padding: 10px 26px; font-size: 15px; font-family: Arial, sans-serif;
+      background: #6c3483; color: white; border: none; border-radius: 6px;
+      cursor: pointer; font-weight: bold; transition: background 0.15s;
+    }
+    .btn-finish:hover { background: #5b2c6f; }
+    .btn-finish:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .rec-dot {
+      display: none; width: 12px; height: 12px; border-radius: 50%;
+      background: #c0392b; animation: blink 1s infinite; flex-shrink: 0;
+    }
+    .rec-dot.visible { display: inline-block; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    .rec-status { font-size: 13px; color: #555; font-family: Arial, sans-serif; }
+
+    .playback-area { margin-top: 14px; }
+    .playback-area audio { width: 100%; border-radius: 6px; }
+
+    .upload-status {
+      font-size: 13px; font-family: Arial, sans-serif; margin-top: 10px;
+      padding: 8px 12px; border-radius: 5px; display: none;
+    }
+    .upload-status.saving { background: #fef9e7; color: #d68910; display: block; }
+    .upload-status.saved  { background: #eafaf1; color: #1e8449; display: block; }
+    .upload-status.error  { background: #fdf0ef; color: #c0392b; display: block; }
+
+    /* ── Verse list: read-only ── */
+    .verse-item { cursor: default !important; }
+    .verse-item:hover .verse-row { background: transparent !important; }
+
+    .no-rec-badge {
+      display: inline-block; font-size: 0.65rem;
+      background: rgba(0,0,0,0.06); color: var(--muted);
+      border: 1px solid var(--rule); border-radius: 4px;
+      padding: 1px 6px; direction: ltr; vertical-align: middle; margin-left: 6px;
+    }
+    .has-recording .verse-text::before {
+      content: ''; display: inline-block; width: 7px; height: 7px;
+      border-radius: 50%; background: var(--gold);
+      margin-left: 0.5rem; vertical-align: middle;
+    }
+    .has-recording .verse-text::after { display: none; }
+
+    /* ── Player bar — purple for teacher ── */
+    .player-bar { background: #2c1a47; border-top-color: #8e44ad; }
+    .player-btn { background: #8e44ad; }
+    .player-btn:hover { background: #7d3c98; }
+    .player-progress { color: #ce93d8; }
+
+    /* ── Success modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55); z-index: 200;
+      justify-content: center; align-items: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: white; border-radius: 14px;
+      padding: 40px 44px; max-width: 400px; width: 90%;
+      text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    }
+    .modal-box h2 { color: #1e8449; font-size: 22px; margin-bottom: 10px; }
+    .modal-box p  { color: #555; font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
+    .btn-modal-done {
+      padding: 11px 32px; background: #6c3483; color: white;
+      border: none; border-radius: 7px; font-size: 15px;
+      font-weight: bold; cursor: pointer;
+    }
+    .btn-modal-done:hover { background: #5b2c6f; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <ul class="nav-links">
+    <a href="/teacher/student/{{ assignment.username }}" class="back-btn">← Cancel & Back</a>
+  </ul>
+  <div class="nav-brand">
+    <img src="/static/scrolein_logo_white.png" alt="ScroLein" style="height:40px; filter:brightness(0) invert(1); opacity:0.92;">
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- Context banner -->
+  <div class="context-banner">
+    <div>
+      <div class="cb-label">Recording nusach for</div>
+      <div class="cb-name">{{ assignment.username }}</div>
+      <div class="cb-meta">{{ assignment.title }} · {{ assignment.parasha }} · {{ assignment.aliyah }}</div>
+    </div>
+    <button class="btn-finish" id="btn-finish" onclick="finishRecording()" disabled>
+      Finish &amp; Send to Student ✓
+    </button>
+  </div>
+
+  <!-- Recording controls -->
+  <div class="record-panel">
+    <h3>Record Your Nusach</h3>
+    <div class="record-controls">
+      <button class="btn-record start" id="btn-start" onclick="startRecording()">⏺ Start Recording</button>
+      <button class="btn-record stop"  id="btn-stop"  onclick="stopRecording()" disabled>⏹ Stop Recording</button>
+      <span class="rec-dot" id="rec-dot"></span>
+      <span class="rec-status" id="rec-status">Press "Start Recording" when ready to sing the text below.</span>
+    </div>
+    <div class="playback-area" id="playback-area" style="display:none;">
+      <audio id="playback-audio" controls></audio>
+    </div>
+    <div class="upload-status" id="upload-status"></div>
+  </div>
+
+  <!-- Parasha header -->
+  <div class="parasha-header">
+    <h1>{{ name }}</h1>
+    <div class="ref-tag" style="direction:ltr;">{{ ref }}</div>
+    <div class="legend" style="direction:ltr; color: #8e44ad;">
+      Read the text below aloud in your nusach while recording
+    </div>
+  </div>
+
+  <script>const VERSES = {{ verses | tojson }}; const ASSIGNMENT_ID = {{ assignment.id }};</script>
+
+  <ul class="verse-list" id="verse-list">
+    {% for v in verses %}
+    <li class="verse-item {% if v.media_url %}has-recording{% endif %}" id="verse-{{ v.num }}">
+      <div class="verse-row">
+        <span class="verse-num" style="direction:ltr;">
+          {% if v.chapter is defined and v.verse is defined %}{{ v.chapter }}:{{ v.verse }}{% else %}{{ v.num }}{% endif %}
+        </span>
+        <span class="verse-text">
+          {% if not v.media_url %}<span class="no-rec-badge">no ref audio</span>{% endif %}
+          {{ v.text }}
+        </span>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <!-- Sticky Sefaria reference player (for teacher to hear the melody while recording) -->
+  <div class="player-bar">
+    <button class="player-btn" id="btn-prev" onclick="go(-1)" title="Previous">&#9664;</button>
+    <button class="player-btn" id="btn-play" onclick="togglePlay()" title="Play Sefaria reference">&#9654;</button>
+    <button class="player-btn" id="btn-next" onclick="go(+1)" title="Next">&#9654;&#9654;</button>
+    <div class="player-info">
+      <div class="player-verse-label" id="player-label">Sefaria reference — use as a melody guide while recording</div>
+      <div class="player-progress"    id="player-progress"></div>
+    </div>
+  </div>
+
+</div><!-- end .page -->
+
+<!-- Success modal -->
+<div class="modal-overlay" id="success-modal">
+  <div class="modal-box">
+    <div style="font-size:48px; margin-bottom:12px;">🎉</div>
+    <h2>Recording Sent!</h2>
+    <p>Your nusach recording has been uploaded and attached to <strong>{{ assignment.username }}'s</strong> assignment. They will hear your recording when they open the text.</p>
+    <button class="btn-modal-done" onclick="goToDashboard()">Back to Dashboard</button>
+  </div>
+</div>
+
+<script>
+// ── Sefaria reference player (bottom bar) ─────────────────────
+let idx = 0, refAudio = null, paused = false;
+const btnPlay    = document.getElementById('btn-play');
+const labelEl    = document.getElementById('player-label');
+const progressEl = document.getElementById('player-progress');
+
+function highlight(i) {
+  document.querySelectorAll('.verse-item').forEach(el => el.classList.remove('active'));
+  const li = document.getElementById('verse-' + VERSES[i].num);
+  if (li) { li.classList.add('active'); li.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+}
+function updateBar() {
+  const v = VERSES[idx];
+  const label = (v.chapter && v.verse) ? `Ref: ${v.chapter}:${v.verse}` : `Ref: verse ${v.num}`;
+  labelEl.textContent    = label;
+  progressEl.textContent = `${idx+1} of ${VERSES.length}${v.media_url ? '' : ' · no ref audio'}`;
+}
+function stopRef() { if (refAudio) { refAudio.pause(); refAudio.src = ''; refAudio = null; } }
+function playRef(i) {
+  stopRef(); paused = false; idx = i; highlight(i); updateBar();
+  btnPlay.innerHTML = '&#9646;&#9646;';
+  const v = VERSES[i];
+  if (!v.media_url) { btnPlay.innerHTML = '&#9654;'; setTimeout(() => { if (!paused) advanceRef(); }, 1200); return; }
+  refAudio = new Audio(v.media_url);
+  refAudio.onended = advanceRef; refAudio.onerror = advanceRef;
+  refAudio.play().catch(advanceRef);
+}
+function advanceRef() {
+  if (paused) return;
+  if (idx < VERSES.length - 1) playRef(idx + 1);
+  else { stopRef(); btnPlay.innerHTML = '&#9654;'; labelEl.textContent = 'End of reference.'; progressEl.textContent = ''; }
+}
+function togglePlay() {
+  if (refAudio && !refAudio.paused) { refAudio.pause(); paused = true; btnPlay.innerHTML = '&#9654;'; }
+  else if (refAudio && refAudio.paused) { paused = false; refAudio.play(); btnPlay.innerHTML = '&#9646;&#9646;'; }
+  else { playRef(idx); }
+}
+function go(delta) { const n = idx + delta; if (n >= 0 && n < VERSES.length) playRef(n); }
+highlight(0); updateBar();
+
+
+// ── Mic recording ─────────────────────────────────────────────
+let mediaRecorder = null, recordedChunks = [], savedBlob = null;
+const btnStart    = document.getElementById('btn-start');
+const btnStop     = document.getElementById('btn-stop');
+const btnFinish   = document.getElementById('btn-finish');
+const recDot      = document.getElementById('rec-dot');
+const recStatus   = document.getElementById('rec-status');
+const playbackArea= document.getElementById('playback-area');
+const playbackAud = document.getElementById('playback-audio');
+const uploadStatus= document.getElementById('upload-status');
+
+async function startRecording() {
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch { recStatus.textContent = 'Microphone access denied. Please allow microphone in browser settings.'; return; }
+
+  recordedChunks = []; savedBlob = null;
+  btnFinish.disabled = true;
+  uploadStatus.className = 'upload-status';
+  uploadStatus.textContent = '';
+
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+  mediaRecorder = new MediaRecorder(stream, { mimeType });
+  mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+  mediaRecorder.onstop = () => {
+    stream.getTracks().forEach(t => t.stop());
+    savedBlob = new Blob(recordedChunks, { type: mimeType });
+    playbackAud.src = URL.createObjectURL(savedBlob);
+    playbackArea.style.display = 'block';
+    recStatus.textContent = 'Recording complete. Listen back above, then click "Finish & Send to Student".';
+    btnFinish.disabled = false;
+    // Auto-upload in background
+    uploadNusach(savedBlob);
+  };
+  mediaRecorder.start();
+
+  btnStart.disabled = true; btnStop.disabled = false;
+  recDot.classList.add('visible');
+  recStatus.textContent = 'Recording in progress... lein the text above.';
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  btnStart.disabled = false; btnStop.disabled = true;
+  recDot.classList.remove('visible');
+  recStatus.textContent = 'Stopping...';
+}
+
+async function uploadNusach(blob) {
+  uploadStatus.className   = 'upload-status saving';
+  uploadStatus.textContent = 'Uploading recording...';
+  const formData = new FormData();
+  formData.append('recording', blob, 'nusach.webm');
+  try {
+    const res  = await fetch(`/upload-nusach/${ASSIGNMENT_ID}`, { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.success) {
+      uploadStatus.className   = 'upload-status saved';
+      uploadStatus.textContent = 'Recording uploaded successfully.';
+    } else { throw new Error(data.error || 'Unknown error'); }
+  } catch(err) {
+    uploadStatus.className   = 'upload-status error';
+    uploadStatus.textContent = 'Upload failed: ' + err.message + '. Try re-recording.';
+    btnFinish.disabled = true;
+  }
+}
+
+function finishRecording() {
+  // Make sure upload is done (it auto-uploads on stop, so just show success)
+  if (uploadStatus.classList.contains('saved')) {
+    document.getElementById('success-modal').classList.add('active');
+  } else if (uploadStatus.classList.contains('saving')) {
+    recStatus.textContent = 'Still uploading, please wait a moment...';
+    setTimeout(() => {
+      if (uploadStatus.classList.contains('saved'))
+        document.getElementById('success-modal').classList.add('active');
+    }, 2000);
+  } else {
+    recStatus.textContent = 'Please record your nusach first.';
+  }
+}
+
+function goToDashboard() {
+  window.location.href = '/teacher/dashboard';
+}
+</script>
+</body>
+</html>

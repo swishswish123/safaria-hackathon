@@ -10,12 +10,11 @@
         nav {
             background-color: #6c3483;
             color: white;
-            padding: 16px 32px;
+            padding: 12px 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        nav h1 { font-size: 20px; }
         .nav-logo { height: 44px; filter: brightness(0) invert(1); opacity: 0.92; }
         .btn-back { padding: 8px 16px; background-color: rgba(255,255,255,0.2); color: white; border-radius: 5px; text-decoration: none; font-size: 14px; }
         .btn-back:hover { background-color: rgba(255,255,255,0.35); }
@@ -35,7 +34,6 @@
         h2 { color: #6c3483; font-size: 20px; margin-bottom: 6px; }
         .subtitle { color: #999; font-size: 13px; margin-bottom: 24px; }
 
-        /* ── Form fields ── */
         .field { margin-bottom: 18px; }
         label { display: block; font-weight: bold; color: #2c3e50; font-size: 14px; margin-bottom: 5px; }
 
@@ -52,271 +50,284 @@
             font-family: Arial, sans-serif;
         }
         input:focus, select:focus, textarea:focus { border-color: #8e44ad; outline: none; }
-
         select { cursor: pointer; }
         select:disabled { background-color: #f5f5f5; color: #aaa; cursor: not-allowed; }
-
         textarea { height: 90px; resize: vertical; }
-
         .nested-selects { display: flex; flex-direction: column; gap: 8px; }
 
         .btn-submit {
-            width: 100%;
-            padding: 13px;
-            background-color: #6c3483;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 6px;
+            width: 100%; padding: 13px;
+            background-color: #6c3483; color: white;
+            border: none; border-radius: 6px;
+            font-size: 16px; cursor: pointer; margin-top: 6px;
         }
         .btn-submit:hover { background-color: #5b2c6f; }
 
         .error-box { background: #fdf0ef; border: 1.5px solid #e74c3c; border-radius: 6px; padding: 10px 14px; color: #c0392b; font-size: 13px; margin-bottom: 14px; }
 
-        /* ── Existing assignments panel ── */
         .section-title { font-size: 16px; font-weight: bold; color: #6c3483; margin-bottom: 12px; border-bottom: 2px solid #8e44ad; padding-bottom: 6px; }
-
         .assign-item { padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #444; }
         .assign-item:last-child { border-bottom: none; }
         .assign-item .atitle { font-weight: bold; color: #2c3e50; }
         .assign-item .ameta  { font-size: 12px; color: #aaa; margin-top: 2px; }
-
         .badge-done    { display: inline-block; padding: 2px 8px; background: #eafaf1; color: #1e8449; border-radius: 10px; font-size: 11px; font-weight: bold; margin-left: 6px; }
         .badge-pending { display: inline-block; padding: 2px 8px; background: #fef9e7; color: #d68910; border-radius: 10px; font-size: 11px; font-weight: bold; margin-left: 6px; }
-        .recording-player {
-            margin-top: 10px;
-            background: #f0f4f8;
-            border-left: 3px solid #6c3483;
-            padding: 8px 12px;
-            border-radius: 4px;
-        }
+        .badge-recorded { display: inline-block; padding: 2px 8px; background: #f0f4f8; color: #6c3483; border-radius: 10px; font-size: 11px; font-weight: bold; margin-left: 6px; border: 1px solid #8e44ad; }
+        .recording-player { margin-top: 10px; background: #f0f4f8; border-left: 3px solid #6c3483; padding: 8px 12px; border-radius: 4px; }
         .recording-label { font-size: 12px; color: #6c3483; font-weight: bold; display: block; margin-bottom: 5px; }
         .recording-player audio { width: 100%; }
-        .badge-recorded { display: inline-block; padding: 2px 8px; background: #f0f4f8; color: #6c3483; border-radius: 10px; font-size: 11px; font-weight: bold; margin-left: 6px; border: 1px solid #8e44ad; }
         .empty-msg { color: #bbb; font-style: italic; font-size: 13px; }
+
+        .own-nusach-hint { display:none; margin-top:8px; padding:10px 12px; background:#fff8e7; border-left:3px solid #d4a020; border-radius:4px; font-size:13px; color:#7a5000; }
+
+        /* Sefaria preview panel */
+        .preview-panel { display:none; margin:0 24px 24px; background:white; border-radius:12px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.1); direction:rtl; }
+        .preview-header { direction:ltr; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
+
+        /* Redirect modal */
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:200; justify-content:center; align-items:center; }
+        .modal-overlay.active { display:flex; }
+        .modal-box { background:white; border-radius:14px; padding:40px 44px; max-width:420px; width:90%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.25); }
+        .modal-box h2 { color:#2c3e50; font-size:20px; margin-bottom:10px; }
+        .modal-box p  { color:#666; font-size:14px; line-height:1.6; margin-bottom:28px; }
+        .modal-btns { display:flex; gap:12px; justify-content:center; }
+        .btn-modal-back { padding:10px 22px; background:#eee; border:none; border-radius:6px; font-size:15px; cursor:pointer; color:#555; }
+        .btn-modal-continue { padding:10px 26px; background:#6c3483; color:white; border:none; border-radius:6px; font-size:15px; font-weight:bold; cursor:pointer; }
+        .btn-modal-continue:hover { background:#5b2c6f; }
     </style>
 </head>
 <body>
 
-    <nav>
-        <h1>Assign Work to {{ student.username }}</h1>
-        <a href="/teacher/dashboard" class="btn-back">Back to Dashboard</a>
-    </nav>
+<nav>
+    <img src="/static/scrolein_logo_white.png" alt="ScroLein" class="nav-logo">
+    <a href="/teacher/dashboard" class="btn-back">Back to Dashboard</a>
+</nav>
 
-    <div class="container">
+<div class="container">
 
-        <!-- ── LEFT: Assignment form ── -->
-        <div class="card">
-            <h2>New Assignment</h2>
-            <p class="subtitle">Fill in the details to assign a reading to {{ student.username }}.</p>
+    <!-- LEFT: Assignment form -->
+    <div class="card">
+        <h2>Assign to {{ student.username }}</h2>
+        <p class="subtitle">Fill in the details to assign a reading.</p>
 
-            {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+        {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
 
-            <form method="POST">
+        <form method="POST" id="assign-form">
 
-                <!-- Assignment Title -->
-                <div class="field">
-                    <label for="title">Assignment Title</label>
-                    <input type="text" id="title" name="title" placeholder="e.g. Bar Mitzvah Parsha Reading" required />
-                </div>
+            <div class="field">
+                <label for="title">Assignment Title</label>
+                <input type="text" id="title" name="title" placeholder="e.g. Bar Mitzvah Parsha Reading" required />
+            </div>
 
-                <!-- Parsha — nested dropdowns -->
-                <div class="field">
-                    <label>Parsha</label>
-                    <!-- Hidden input that actually gets submitted -->
-                    <input type="hidden" id="parasha" name="parasha" required />
-                    <div class="nested-selects">
-                        <select id="sefer-select" onchange="loadParshiot()">
-                            <option value="">-- Select a Sefer --</option>
-                            <option value="Bereishit">Bereishit</option>
-                            <option value="Shemot">Shemot</option>
-                            <option value="Vayikra">Vayikra</option>
-                            <option value="Bamidbar">Bamidbar</option>
-                            <option value="Devarim">Devarim</option>
-                        </select>
-                        <select id="parsha-select" onchange="setParasha()" disabled>
-                            <option value="">-- Select a Parsha --</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Aliyah -->
-                <div class="field">
-                    <label for="aliyah">Aliyah</label>
-                    <select id="aliyah" name="aliyah" required>
-                        <option value="">-- Select an Aliyah --</option>
-                        <option value="First Aliyah">First Aliyah</option>
-                        <option value="Second Aliyah">Second Aliyah</option>
-                        <option value="Third Aliyah">Third Aliyah</option>
-                        <option value="Fourth Aliyah">Fourth Aliyah</option>
-                        <option value="Fifth Aliyah">Fifth Aliyah</option>
-                        <option value="Sixth Aliyah">Sixth Aliyah</option>
-                        <option value="Seventh Aliyah">Seventh Aliyah</option>
-                        <option value="Maftir">Maftir</option>
-                        <option value="Haftorah">Haftorah</option>
+            <div class="field">
+                <label>Parsha</label>
+                <input type="hidden" id="parasha" name="parasha" />
+                <div class="nested-selects">
+                    <select id="sefer-select" onchange="loadParshiot()">
+                        <option value="">-- Select a Sefer --</option>
+                        <option value="Bereishit">Bereishit</option>
+                        <option value="Shemot">Shemot</option>
+                        <option value="Vayikra">Vayikra</option>
+                        <option value="Bamidbar">Bamidbar</option>
+                        <option value="Devarim">Devarim</option>
+                    </select>
+                    <select id="parsha-select" onchange="setParasha()" disabled>
+                        <option value="">-- Select a Parsha --</option>
                     </select>
                 </div>
+            </div>
 
-                <!-- Due Date -->
-                <div class="field">
-                    <label for="due_date">Due Date</label>
-                    <input type="date" id="due_date" name="due_date" />
+            <div class="field">
+                <label for="aliyah">Aliyah</label>
+                <select id="aliyah" name="aliyah" required>
+                    <option value="">-- Select an Aliyah --</option>
+                    <option>First Aliyah</option>
+                    <option>Second Aliyah</option>
+                    <option>Third Aliyah</option>
+                    <option>Fourth Aliyah</option>
+                    <option>Fifth Aliyah</option>
+                    <option>Sixth Aliyah</option>
+                    <option>Seventh Aliyah</option>
+                    <option>Maftir</option>
+                    <option>Haftorah</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="due_date">Due Date</label>
+                <input type="date" id="due_date" name="due_date" />
+            </div>
+
+            <div class="field">
+                <label for="recording_choice">Cantillation Recording</label>
+                <select id="recording_choice" name="recording_choice" onchange="onRecordingChoiceChange()">
+                    <option value="included">Use included recording (Ashkenazi)</option>
+                    <option value="own">Record your own Nusach</option>
+                </select>
+                <div class="own-nusach-hint" id="own-nusach-hint">
+                    After clicking "Assign", you'll be taken to a recording page where you can sing the text in your own nusach for this student.
                 </div>
+            </div>
 
-                <!-- Notes -->
-                <div class="field">
-                    <label for="notes">Notes</label>
-                    <textarea id="notes" name="notes" placeholder="Any instructions or context for the student..."></textarea>
-                </div>
+            <div class="field">
+                <label for="notes">Notes</label>
+                <textarea id="notes" name="notes" placeholder="Any instructions or context for the student..."></textarea>
+            </div>
 
-                <button type="submit" class="btn-submit">Assign</button>
-            </form>
-        </div>
-
-        <!-- ── RIGHT: Existing assignments ── -->
-        <div class="card">
-            <div class="section-title">Current Assignments</div>
-            {% if existing %}
-                {% for a in existing %}
-                <div class="assign-item">
-                    <div class="atitle">
-                        {{ a.title }}
-                        {% if a.submitted %}
-                            <span class="badge-done">Submitted</span>
-                        {% else %}
-                            <span class="badge-pending">Pending</span>
-                        {% endif %}
-                        {% if a.recording_filename %}
-                            <span class="badge-recorded">Has Recording</span>
-                        {% endif %}
-                    </div>
-                    <div class="ameta">{{ a.parasha }} · {{ a.aliyah }} · Due: {{ a.due_date or "No date set" }}</div>
-                    {% if a.notes %}<div class="ameta" style="margin-top:3px; font-style:italic;">{{ a.notes }}</div>{% endif %}
-                    {% if a.recording_filename and a.submitted %}
-                    <div class="recording-player">
-                        <span class="recording-label">Student recording:</span>
-                        <audio controls src="/static/recordings/{{ a.recording_filename }}"></audio>
-                    </div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            {% else %}
-                <p class="empty-msg">No assignments yet.</p>
-            {% endif %}
-        </div>
-
+            <button type="button" class="btn-submit" onclick="handleAssignClick()">Assign</button>
+        </form>
     </div>
 
-    <!-- ── SEFARIA LIVE PREVIEW (shown after parsha+aliyah are selected) ── -->
-    <div id="preview-panel" style="display:none; margin:0 24px 24px; background:white; border-radius:12px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.1); direction:rtl;">
-        <div style="direction:ltr; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-            <strong style="color:#6c3483; font-size:15px;">Sefaria Text Preview</strong>
-            <span id="preview-ref" style="font-size:12px; color:#999; font-style:italic;"></span>
-        </div>
-        <div id="preview-verses" style="font-family:'Frank Ruhl Libre', serif; font-size:1.2rem; line-height:2; color:#12100e;"></div>
-        <div id="preview-note" style="direction:ltr; font-size:12px; color:#aaa; margin-top:8px; font-style:italic;"></div>
-        <div id="preview-loading" style="direction:ltr; color:#999; font-size:13px; display:none;">Loading verses from Sefaria...</div>
+    <!-- RIGHT: Existing assignments -->
+    <div class="card">
+        <div class="section-title">Current Assignments</div>
+        {% if existing %}
+            {% for a in existing %}
+            <div class="assign-item">
+                <div class="atitle">
+                    {{ a.title }}
+                    {% if a.submitted %}<span class="badge-done">Submitted</span>
+                    {% else %}<span class="badge-pending">Pending</span>{% endif %}
+                    {% if a.recording_filename %}<span class="badge-recorded">Has Recording</span>{% endif %}
+                </div>
+                <div class="ameta">{{ a.parasha }} · {{ a.aliyah }} · Due: {{ a.due_date or "No date set" }}</div>
+                {% if a.notes %}<div class="ameta" style="margin-top:3px; font-style:italic;">{{ a.notes }}</div>{% endif %}
+                {% if a.recording_filename and a.submitted %}
+                <div class="recording-player">
+                    <span class="recording-label">Student recording:</span>
+                    <audio controls src="/static/recordings/{{ a.recording_filename }}"></audio>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="empty-msg">No assignments yet.</p>
+        {% endif %}
     </div>
 
-    <script>
-        // Parshiot injected from the server (torah_library.json — no hardcoding)
-        // parasha_list is [{"en": "Bereishit", "sefer": "Bereishit"}, ...]
-        const PARASHA_LIST = {{ parasha_list | tojson }};
-        const parshiot = {};
-        PARASHA_LIST.forEach(p => {
-            if (!parshiot[p.sefer]) parshiot[p.sefer] = [];
-            parshiot[p.sefer].push(p.en);
+</div>
+
+<!-- Sefaria live preview panel -->
+<div class="preview-panel" id="preview-panel">
+    <div class="preview-header">
+        <strong style="color:#6c3483; font-size:15px;">Sefaria Text Preview</strong>
+        <span id="preview-ref" style="font-size:12px; color:#999; font-style:italic;"></span>
+    </div>
+    <div id="preview-verses" style="font-family:'Frank Ruhl Libre', serif; font-size:1.2rem; line-height:2; color:#12100e;"></div>
+    <div id="preview-note"   style="direction:ltr; font-size:12px; color:#aaa; margin-top:8px; font-style:italic;"></div>
+    <div id="preview-loading" style="direction:ltr; color:#999; font-size:13px; display:none;">Loading verses from Sefaria...</div>
+</div>
+
+<!-- Redirect modal for "Record your own Nusach" -->
+<div class="modal-overlay" id="record-modal-overlay">
+    <div class="modal-box">
+        <div style="font-size:40px; margin-bottom:14px;">🎙️</div>
+        <h2>Record Your Nusach</h2>
+        <p>Since you chose <strong>"Record your own Nusach"</strong>, you'll now be taken to a recording page with the full text of this aliyah.<br><br>Your recording will replace the standard Ashkenazi cantillation for this student's assignment.</p>
+        <div class="modal-btns">
+            <button class="btn-modal-back" onclick="closeRecordModal()">Go Back</button>
+            <button class="btn-modal-continue" onclick="submitFormNow()">Continue →</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const parshiot = {
+        "Bereishit": ["Bereishit","Noach","Lech Lecha","Vayeira","Chayei Sarah","Toldot","Vayeitzei","Vayishlach","Vayeishev","Mikeitz","Vayigash","Vayechi"],
+        "Shemot":   ["Shemot","Vaeira","Bo","Beshalach","Yitro","Mishpatim","Terumah","Tetzaveh","Ki Tisa","Vayakhel","Pekudei"],
+        "Vayikra":  ["Vayikra","Tzav","Shemini","Tazria","Metzora","Acharei Mot","Kedoshim","Emor","Behar","Bechukotai"],
+        "Bamidbar": ["Bamidbar","Naso","Behaalotecha","Shelach","Korach","Chukat","Balak","Pinchas","Matot","Masei"],
+        "Devarim":  ["Devarim","Vaetchanan","Eikev","Re'eh","Shoftim","Ki Teitzei","Ki Tavo","Nitzavim","Vayeilech","Haazinu","Vezot HaBerachah"]
+    };
+
+    function loadParshiot() {
+        const sefer = document.getElementById("sefer-select").value;
+        const parshaSelect = document.getElementById("parsha-select");
+        parshaSelect.innerHTML = '<option value="">-- Select a Parsha --</option>';
+        document.getElementById("parasha").value = "";
+        if (!sefer) { parshaSelect.disabled = true; return; }
+        parshiot[sefer].forEach(p => {
+            const opt = document.createElement("option");
+            opt.value = opt.textContent = p;
+            parshaSelect.appendChild(opt);
         });
+        parshaSelect.disabled = false;
+    }
 
-        function loadParshiot() {
-            const sefer       = document.getElementById("sefer-select").value;
-            const parshaSelect = document.getElementById("parsha-select");
-            const parashaInput = document.getElementById("parasha");
+    function setParasha() {
+        document.getElementById("parasha").value = document.getElementById("parsha-select").value;
+        loadPreview();
+    }
 
-            // Reset
-            parshaSelect.innerHTML = '<option value="">-- Select a Parsha --</option>';
-            parashaInput.value     = "";
+    document.getElementById("aliyah").addEventListener("change", loadPreview);
 
-            if (!sefer) {
-                parshaSelect.disabled = true;
-                return;
-            }
-
-            // Populate second dropdown
-            parshiot[sefer].forEach(p => {
-                const opt = document.createElement("option");
-                opt.value       = p;
-                opt.textContent = p;
-                parshaSelect.appendChild(opt);
+    function loadPreview() {
+        const parasha = document.getElementById("parasha").value;
+        const aliyah  = document.getElementById("aliyah").value;
+        if (!parasha || !aliyah) return;
+        const panel    = document.getElementById("preview-panel");
+        const loading  = document.getElementById("preview-loading");
+        const versesEl = document.getElementById("preview-verses");
+        const refEl    = document.getElementById("preview-ref");
+        const noteEl   = document.getElementById("preview-note");
+        panel.style.display = "block";
+        loading.style.display = "block";
+        versesEl.innerHTML = ""; refEl.textContent = ""; noteEl.textContent = "";
+        fetch(`/api/sefaria-preview?parasha=${encodeURIComponent(parasha)}&aliyah=${encodeURIComponent(aliyah)}`)
+            .then(r => r.json())
+            .then(data => {
+                loading.style.display = "none";
+                if (data.error) { versesEl.innerHTML = `<span style="color:#c0392b;direction:ltr;">${data.error}</span>`; return; }
+                refEl.textContent = data.ref;
+                if (data.note) noteEl.textContent = data.note;
+                if (data.verses && data.verses.length) {
+                    versesEl.innerHTML = data.verses.map(v =>
+                        `<div style="border-bottom:1px solid rgba(184,136,12,0.2);padding:6px 0;">
+                            <span style="font-size:0.7rem;color:#7a6a50;direction:ltr;display:inline-block;min-width:24px;">${v.num}</span>
+                            ${v.text}
+                        </div>`
+                    ).join("") + `<div style="direction:ltr;font-size:12px;color:#aaa;margin-top:6px;">Showing first ${data.verses.length} verses — full text visible to student.</div>`;
+                } else {
+                    versesEl.innerHTML = '<span style="color:#aaa;font-size:13px;direction:ltr;">Preview unavailable for this selection.</span>';
+                }
+            })
+            .catch(() => {
+                loading.style.display = "none";
+                versesEl.innerHTML = '<span style="color:#c0392b;font-size:13px;direction:ltr;">Could not reach Sefaria.</span>';
             });
-            parshaSelect.disabled = false;
+    }
+
+    function onRecordingChoiceChange() {
+        const choice = document.getElementById("recording_choice").value;
+        document.getElementById("own-nusach-hint").style.display = choice === "own" ? "block" : "none";
+    }
+
+    function handleAssignClick() {
+        const title   = document.getElementById("title").value.trim();
+        const parasha = document.getElementById("parasha").value;
+        const aliyah  = document.getElementById("aliyah").value;
+        if (!title)   { alert("Please enter an Assignment Title."); return; }
+        if (!parasha) { alert("Please select both a Sefer and a Parsha."); return; }
+        if (!aliyah)  { alert("Please select an Aliyah."); return; }
+        if (document.getElementById("recording_choice").value === "own") {
+            document.getElementById("record-modal-overlay").classList.add("active");
+        } else {
+            document.getElementById("assign-form").submit();
         }
+    }
 
-        function setParasha() {
-            const selected = document.getElementById("parsha-select").value;
-            document.getElementById("parasha").value = selected;
-            loadPreview();
-        }
+    function closeRecordModal() {
+        document.getElementById("record-modal-overlay").classList.remove("active");
+    }
 
-        // Also trigger preview when aliyah changes
-        document.getElementById("aliyah").addEventListener("change", loadPreview);
+    function submitFormNow() {
+        document.getElementById("assign-form").submit();
+    }
 
-        function loadPreview() {
-            const parasha = document.getElementById("parasha").value;
-            const aliyah  = document.getElementById("aliyah").value;
-            if (!parasha || !aliyah) return;
-
-            const panel   = document.getElementById("preview-panel");
-            const loading = document.getElementById("preview-loading");
-            const versesEl= document.getElementById("preview-verses");
-            const refEl   = document.getElementById("preview-ref");
-            const noteEl  = document.getElementById("preview-note");
-
-            panel.style.display = "block";
-            loading.style.display = "block";
-            versesEl.innerHTML = "";
-            refEl.textContent  = "";
-            noteEl.textContent = "";
-
-            fetch(`/api/sefaria-preview?parasha=${encodeURIComponent(parasha)}&aliyah=${encodeURIComponent(aliyah)}`)
-                .then(r => r.json())
-                .then(data => {
-                    loading.style.display = "none";
-                    if (data.error) {
-                        versesEl.innerHTML = `<span style="color:#c0392b; font-size:14px; direction:ltr;">${data.error}</span>`;
-                        return;
-                    }
-                    refEl.textContent = data.ref;
-                    if (data.note) noteEl.textContent = data.note;
-                    if (data.verses && data.verses.length > 0) {
-                        versesEl.innerHTML = data.verses.map(v =>
-                            `<div style="border-bottom:1px solid rgba(184,136,12,0.2); padding:6px 0;">
-                                <span style="font-size:0.7rem; color:#7a6a50; direction:ltr; display:inline-block; min-width:24px;">${v.num}</span>
-                                ${v.text}
-                            </div>`
-                        ).join("") + `<div style="direction:ltr; font-size:12px; color:#aaa; margin-top:6px;">Showing first ${data.verses.length} verses — full text visible to student.</div>`;
-                    } else {
-                        versesEl.innerHTML = '<span style="color:#aaa; font-size:13px; direction:ltr;">Preview unavailable for this selection.</span>';
-                    }
-                })
-                .catch(() => {
-                    loading.style.display = "none";
-                    versesEl.innerHTML = '<span style="color:#c0392b; font-size:13px; direction:ltr;">Could not reach Sefaria. Check your internet connection.</span>';
-                });
-        }
-
-        // Prevent submitting if parsha not fully selected
-        document.querySelector("form").addEventListener("submit", function(e) {
-            const parasha = document.getElementById("parasha").value;
-            if (!parasha) {
-                e.preventDefault();
-                alert("Please select both a Sefer and a Parsha.");
-            }
-        });
-    </script>
+    document.getElementById("record-modal-overlay").addEventListener("click", function(e) {
+        if (e.target === this) closeRecordModal();
+    });
+</script>
 
 </body>
 </html>
-<!-- This closing tag already exists — we need to insert the preview panel and JS before </body> -->

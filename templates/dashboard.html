@@ -110,7 +110,51 @@
 
         .empty-msg { color: #bbb; font-style: italic; font-size: 13px; margin-bottom: 10px; }
 
-        /* ── No classes at all ── */
+        /* ── Feedback cards ── */
+        .feedback-card {
+            background: white; border-radius: 8px;
+            padding: 14px 20px; margin-bottom: 10px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+            border-left: 4px solid #8e44ad;
+        }
+        .feedback-card.unseen { border-left-color: #e74c3c; }
+        .feedback-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+        .feedback-card h3 { font-size:14px; color:#2c3e50; margin-bottom:3px; }
+        .feedback-card p  { font-size:11px; color:#aaa; }
+        .feedback-pills { display:flex; gap:6px; flex-wrap:wrap; margin-top:7px; }
+        .fp { padding:3px 9px; border-radius:12px; font-size:11px; font-weight:bold; }
+        .fp.perfect { background:#eafaf1; color:#1e8449; border:1px solid #27ae60; }
+        .fp.some    { background:#fef9e7; color:#b7770d; border:1px solid #d4a020; }
+        .fp.work    { background:#fdf0ef; color:#c0392b; border:1px solid #e74c3c; }
+        .btn-view-feedback {
+            padding:7px 14px; background:#8e44ad; color:white;
+            border-radius:5px; font-size:13px; text-decoration:none;
+            display:inline-block; font-weight:bold; white-space:nowrap;
+        }
+        .btn-view-feedback:hover { background:#7d3c98; }
+        .btn-view-feedback.new-badge::after {
+            content:'NEW'; font-size:9px; background:#e74c3c;
+            border-radius:8px; padding:1px 5px; margin-left:6px;
+            vertical-align:middle; letter-spacing:0.05em;
+        }
+
+        /* ── New feedback login popup ── */
+        .feedback-popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:200; justify-content:center; align-items:center; }
+        .feedback-popup-overlay.active { display:flex; }
+        .feedback-popup {
+            background:white; border-radius:14px; padding:36px 40px;
+            max-width:460px; width:92%; box-shadow:0 12px 48px rgba(0,0,0,0.25);
+            text-align:center;
+        }
+        .feedback-popup h2 { color:#6c3483; font-size:22px; margin-bottom:8px; }
+        .feedback-popup p  { color:#555; font-size:14px; margin-bottom:18px; line-height:1.6; }
+        .feedback-popup-list { text-align:left; margin-bottom:22px; }
+        .fpl-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#f9f0ff; border-radius:7px; margin-bottom:8px; border-left:3px solid #8e44ad; }
+        .fpl-info { font-size:13px; }
+        .fpl-info strong { color:#2c3e50; display:block; margin-bottom:2px; }
+        .fpl-info span { color:#888; font-size:12px; }
+        .fpl-link { padding:6px 14px; background:#8e44ad; color:white; border-radius:5px; font-size:12px; font-weight:bold; text-decoration:none; }
+        .fpl-link:hover { background:#7d3c98; }
         .no-classes { background: white; border-radius: 10px; padding: 36px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
         .no-classes p { color: #888; margin-bottom: 16px; }
         .btn-join { display: inline-block; padding: 11px 24px; background-color: #27ae60; color: white; border-radius: 6px; text-decoration: none; font-size: 15px; }
@@ -212,6 +256,27 @@
                         <p class="empty-msg">No completed assignments yet.</p>
                     {% endif %}
 
+                    {% if section.feedback %}
+                    <div class="section-title" style="color:#6c3483; border-color:#8e44ad;">Feedback Received</div>
+                    {% for a in section.feedback %}
+                    <div class="feedback-card {% if not a.feedback_seen %}unseen{% endif %}">
+                        <div class="feedback-top">
+                            <div>
+                                <h3>{{ a.title }} {% if not a.feedback_seen %}<span style="font-size:10px; background:#e74c3c; color:white; padding:2px 6px; border-radius:8px; vertical-align:middle;">NEW</span>{% endif %}</h3>
+                                <p>{{ a.parasha }} · {{ a.aliyah }} · Feedback from {{ a.assigned_by }}</p>
+                                <div class="feedback-pills">
+                                    <span class="fp perfect">✓ {{ a._grade_perfect }} Perfect</span>
+                                    <span class="fp some">⚠ {{ a._grade_some }} Few mistakes</span>
+                                    <span class="fp work">✗ {{ a._grade_work }} Needs work</span>
+                                </div>
+                            </div>
+                            <a href="/feedback/{{ a.id }}" class="btn-view-feedback {% if not a.feedback_seen %}new-badge{% endif %}">View Feedback</a>
+                        </div>
+                        {% if a.feedback_note %}<div class="notes-preview" style="margin-top:8px; border-left-color:#8e44ad;">{{ a.feedback_note }}</div>{% endif %}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
                 </div>
             </div>
             {% endfor %}
@@ -251,6 +316,49 @@
             </div>
         </div>
     </div>
+
+    <!-- New feedback notification popup -->
+    {% if new_feedback %}
+    <div class="feedback-popup-overlay active" id="feedbackPopup">
+        <div class="feedback-popup">
+            <div style="font-size:44px; margin-bottom:10px;">📋</div>
+            <h2>You have new feedback!</h2>
+            <p>
+                {% if new_feedback|length == 1 %}
+                    Your teacher has reviewed one of your assignments.
+                {% else %}
+                    Your teacher has reviewed {{ new_feedback|length }} of your assignments.
+                {% endif %}
+                Check the feedback below and re-record when you're ready.
+            </p>
+            <div class="feedback-popup-list">
+                {% for a in new_feedback %}
+                <div class="fpl-item">
+                    <div class="fpl-info">
+                        <strong>{{ a.title }}</strong>
+                        <span>{{ a.parasha }} · {{ a.aliyah }}</span>
+                    </div>
+                    <a href="/feedback/{{ a.id }}" class="fpl-link">View →</a>
+                </div>
+                {% endfor %}
+            </div>
+            <button onclick="dismissFeedbackPopup()" style="padding:11px 32px; background:#6c3483; color:white; border:none; border-radius:7px; font-size:15px; font-weight:bold; cursor:pointer;">Got it!</button>
+        </div>
+    </div>
+    {% endif %}
+
+    <script>
+        function dismissFeedbackPopup() {
+            document.getElementById('feedbackPopup').classList.remove('active');
+            // Mark all as seen server-side
+            fetch('/mark-feedback-seen', { method: 'POST' }).catch(() => {});
+        }
+        // Also dismiss on backdrop click
+        const popup = document.getElementById('feedbackPopup');
+        if (popup) popup.addEventListener('click', function(e) {
+            if (e.target === this) dismissFeedbackPopup();
+        });
+    </script>
 
     <script>
         function toggleSection(header) {

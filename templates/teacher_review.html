@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Review: {{ assignment.title }} · Leining App</title>
+  <title>Review: {{ assignment.title }} · ScroLein</title>
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
   <style>
@@ -17,43 +17,170 @@
 
     /* Teacher context banner */
     .teacher-banner {
-      background: #2c1a47;
-      border: 1px solid #8e44ad;
-      border-radius: 8px;
-      padding: 16px 22px;
-      margin-bottom: 1.4rem;
-      direction: ltr;
+      background: #2c1a47; border: 1px solid #8e44ad;
+      border-radius: 8px; padding: 16px 22px;
+      margin-bottom: 1.4rem; direction: ltr;
     }
     .tb-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
-    .tb-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #b39ddb; margin-bottom: 3px; }
-    .tb-name  { color: white; font-family: 'Frank Ruhl Libre', serif; font-size: 1.1rem; font-weight: 700; }
-    .tb-meta  { color: #ce93d8; font-size: 0.85rem; margin-top: 4px; }
+    .tb-label     { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #b39ddb; margin-bottom: 3px; }
+    .tb-name      { color: white; font-family: 'Frank Ruhl Libre', serif; font-size: 1.1rem; font-weight: 700; }
+    .tb-meta      { color: #ce93d8; font-size: 0.85rem; margin-top: 4px; }
     .tb-submitted { color: #a5d6a7; font-size: 0.8rem; margin-top: 4px; }
-    .tb-notes { color: #aaa; font-size: 0.82rem; font-style: italic; margin-top: 8px; border-top: 1px solid rgba(142,68,173,0.4); padding-top: 8px; }
+    .tb-notes     { color: #aaa; font-size: 0.82rem; font-style: italic; margin-top: 8px; border-top: 1px solid rgba(142,68,173,0.4); padding-top: 8px; }
 
-    /* Verse text — read-only, no hover pointer */
+    /* Feedback action bar — pinned below nav, above content */
+    .feedback-action-bar {
+      direction: ltr;
+      background: #1e0f33;
+      border: 1px solid #6c3483;
+      border-radius: 8px;
+      padding: 14px 20px;
+      margin-bottom: 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .fab-left { display: flex; flex-direction: column; gap: 4px; }
+    .fab-title { color: white; font-weight: bold; font-size: 0.95rem; }
+    .fab-progress { font-size: 0.8rem; color: #b39ddb; }
+    .fab-right { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .btn-finish-later {
+      padding: 9px 20px; background: rgba(255,255,255,0.1); color: #d9b8f5;
+      border: 1px solid rgba(142,68,173,0.5); border-radius: 6px;
+      font-size: 14px; cursor: pointer; font-family: Arial, sans-serif;
+      transition: background 0.15s;
+    }
+    .btn-finish-later:hover { background: rgba(255,255,255,0.18); }
+
+    .btn-submit-feedback {
+      padding: 9px 22px; background: #8e44ad; color: white;
+      border: none; border-radius: 6px;
+      font-size: 14px; font-weight: bold; cursor: pointer;
+      font-family: Arial, sans-serif; transition: background 0.15s;
+    }
+    .btn-submit-feedback:hover { background: #7d3c98; }
+    .btn-submit-feedback:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Override verse-item for grading layout */
     .verse-item { cursor: default !important; }
-    .verse-item:hover .verse-row { background: transparent !important; }
+    .verse-item .verse-row { background: transparent !important; cursor: default !important; }
 
-    /* No recording badge */
-    .no-rec-badge {
-      display: inline-block; font-size: 0.65rem;
-      background: rgba(0,0,0,0.06); color: var(--muted);
-      border: 1px solid var(--rule); border-radius: 4px;
-      padding: 1px 6px; direction: ltr; vertical-align: middle; margin-left: 6px;
+    /* Wrap verse-row + grade buttons in a flex outer container (LTR so buttons sit on right) */
+    .verse-outer {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      direction: ltr;      /* outer is LTR so grade buttons land on the right */
+      padding: 6px 0;
+    }
+    .verse-content {
+      flex: 1;
+      direction: rtl;      /* Hebrew text stays RTL */
+    }
+    .verse-content .verse-row {
+      padding: 0;          /* remove double-padding since outer handles it */
     }
 
-    /* Override player bar for teacher: purple instead of navy */
+    /* Grade buttons group */
+    .grade-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .btn-grade {
+      padding: 5px 11px;
+      border: 2px solid transparent;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+      white-space: nowrap;
+      opacity: 0.45;
+      transition: opacity 0.12s, transform 0.1s;
+      background: white;
+    }
+    .btn-grade:hover { opacity: 0.75; transform: scale(1.04); }
+
+    .btn-grade.perfect { border-color: #1e8449; color: #1e8449; }
+    .btn-grade.some    { border-color: #b7770d; color: #b7770d; }
+    .btn-grade.work    { border-color: #c0392b; color: #c0392b; }
+
+    .btn-grade.selected { opacity: 1; color: white; transform: scale(1.06); }
+    .btn-grade.perfect.selected { background: #1e8449; border-color: #1e8449; }
+    .btn-grade.some.selected    { background: #b7770d; border-color: #b7770d; }
+    .btn-grade.work.selected    { background: #c0392b; border-color: #c0392b; }
+
+    /* Verse highlight when graded */
+    .verse-item.graded-perfect { border-left: 3px solid #1e8449; }
+    .verse-item.graded-some    { border-left: 3px solid #d4a020; }
+    .verse-item.graded-work    { border-left: 3px solid #c0392b; }
+
+    /* Player bar */
     .player-bar { background: #2c1a47; border-top-color: #8e44ad; }
     .player-btn { background: #8e44ad; }
     .player-btn:hover { background: #7d3c98; }
     .player-verse-label { font-family: Arial, sans-serif; font-size: 0.9rem; }
     .player-progress    { color: #ce93d8; }
 
-    /* Recording status in the player bar */
-    .recording-status {
-      font-size: 0.8rem; color: #ce93d8; margin-top: 2px;
+    /* Feedback note textarea */
+    .feedback-note-wrap {
+      direction: ltr;
+      margin: 1.5rem 0 6rem;  /* extra bottom margin so player bar doesn't cover it */
+      background: #2c1a47;
+      border: 1px solid #6c3483;
+      border-radius: 8px;
+      padding: 16px 20px;
     }
+    .feedback-note-wrap label {
+      display: block; color: #b39ddb;
+      font-size: 0.82rem; text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 8px;
+    }
+    .feedback-note-wrap textarea {
+      width: 100%; background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(142,68,173,0.4); border-radius: 5px;
+      color: white; font-family: Arial, sans-serif; font-size: 0.9rem;
+      padding: 10px 12px; resize: vertical; min-height: 70px;
+    }
+    .feedback-note-wrap textarea::placeholder { color: rgba(255,255,255,0.3); }
+    .feedback-note-wrap textarea:focus { outline: none; border-color: #8e44ad; }
+
+    /* Confirmation modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 300; justify-content: center; align-items: center; }
+    .modal-overlay.active { display: flex; }
+    .modal-box { background: white; border-radius: 14px; padding: 38px 44px; max-width: 440px; width: 90%; text-align: center; box-shadow: 0 12px 48px rgba(0,0,0,0.3); direction: ltr; }
+    .modal-box h2 { font-size: 20px; color: #2c3e50; margin-bottom: 10px; }
+    .modal-box p  { color: #666; font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
+    .modal-grade-summary { display: flex; justify-content: center; gap: 18px; margin-bottom: 22px; flex-wrap: wrap; }
+    .mgs-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .mgs-dot  { width: 14px; height: 14px; border-radius: 50%; }
+    .mgs-dot.perfect { background: #1e8449; }
+    .mgs-dot.some    { background: #d4a020; }
+    .mgs-dot.work    { background: #c0392b; }
+    .mgs-dot.ungraded { background: #ccc; }
+    .mgs-label { font-size: 12px; color: #555; }
+    .mgs-count { font-size: 18px; font-weight: bold; color: #2c3e50; }
+    .modal-btns { display: flex; gap: 12px; justify-content: center; }
+    .btn-modal-cancel { padding: 10px 22px; background: #eee; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; color: #555; }
+    .btn-modal-cancel:hover { background: #ddd; }
+    .btn-modal-confirm { padding: 10px 26px; background: #8e44ad; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
+    .btn-modal-confirm:hover { background: #7d3c98; }
+
+    /* Saving toast */
+    .save-toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: #2c3e50; color: white; padding: 10px 22px;
+      border-radius: 20px; font-size: 13px; font-family: Arial, sans-serif;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200;
+      direction: ltr;
+    }
+    .save-toast.visible { opacity: 1; }
   </style>
 </head>
 <body>
@@ -62,7 +189,9 @@
   <ul class="nav-links">
     <a href="/teacher/student/{{ assignment.username }}" class="back-btn">← Back to {{ assignment.username }}'s Assignments</a>
   </ul>
-  <div class="nav-brand"><img src="/static/scrolein_logo_white.png" alt="ScroLein" style="height:40px; filter:brightness(0) invert(1); opacity:0.92;"></div>
+  <div class="nav-brand">
+    <img src="/static/scrolein_logo_white.png" alt="ScroLein" style="height:40px; filter:brightness(0) invert(1); opacity:0.92;">
+  </div>
 </nav>
 
 <div class="page">
@@ -71,7 +200,7 @@
   <div class="teacher-banner">
     <div class="tb-row">
       <div>
-        <div class="tb-label">Reviewing</div>
+        <div class="tb-label">Reviewing submission from</div>
         <div class="tb-name">{{ assignment.username }}</div>
         <div class="tb-meta">{{ assignment.title }} &nbsp;·&nbsp; {{ assignment.parasha }} &nbsp;·&nbsp; {{ assignment.aliyah }}</div>
         {% if assignment.submitted_at %}
@@ -81,7 +210,7 @@
       {% if assignment.due_date %}
       <div style="text-align:right; direction:ltr;">
         <div class="tb-label">Due Date</div>
-        <div style="color: #e1bee7; font-size: 0.9rem;">{{ assignment.due_date }}</div>
+        <div style="color:#e1bee7; font-size:0.9rem;">{{ assignment.due_date }}</div>
       </div>
       {% endif %}
     </div>
@@ -90,33 +219,67 @@
     {% endif %}
   </div>
 
+  <!-- Feedback action bar -->
+  <div class="feedback-action-bar">
+    <div class="fab-left">
+      <div class="fab-title">Grade each pasuk, then submit feedback</div>
+      <div class="fab-progress" id="fab-progress">0 of {{ verses|length }} pasukim graded</div>
+    </div>
+    <div class="fab-right">
+      <button class="btn-finish-later" onclick="finishLater()">💾 Finish Later</button>
+      <button class="btn-submit-feedback" id="btn-submit-fb" onclick="openSubmitModal()">
+        ✓ Submit Feedback to {{ assignment.username }}
+      </button>
+    </div>
+  </div>
+
   <!-- Parasha header -->
   <div class="parasha-header">
     <h1>{{ name }}</h1>
     <div class="ref-tag" style="direction:ltr;">{{ ref }}</div>
-    <div class="legend" style="direction:ltr; color: #8e44ad;">
-      Follow along below while listening to {{ assignment.username }}'s recording
+    <div class="legend" style="direction:ltr; color:#8e44ad;">
+      Grade each pasuk while listening · <strong>{{ verses|length }}</strong> pasukim total
     </div>
   </div>
+
+  <script>
+    const VERSES       = {{ verses | tojson }};
+    const ASSIGNMENT_ID = {{ assignment.id }};
+    const TOTAL         = VERSES.length;
+    const SAVED_GRADES  = {{ (assignment.verse_grades or '{}') | safe }};
+  </script>
 
   <ul class="verse-list" id="verse-list">
     {% for v in verses %}
     <li class="verse-item" id="verse-{{ v.num }}">
-      <div class="verse-row">
-        <span class="verse-num" style="direction:ltr;">
-          {% if v.chapter is defined and v.verse is defined %}
-            {{ v.chapter }}:{{ v.verse }}
-          {% else %}
-            {{ v.num }}
-          {% endif %}
-        </span>
-        <span class="verse-text">{{ v.text }}</span>
+      <div class="verse-outer">
+        <!-- Grade buttons (left side in LTR outer) -->
+        <div class="grade-btns" id="grade-btns-{{ v.num }}">
+          <button class="btn-grade perfect" onclick="grade({{ v.num }}, 'perfect')" title="Perfect!">✓ Perfect!</button>
+          <button class="btn-grade some"    onclick="grade({{ v.num }}, 'some')"    title="A few mistakes">⚠ Few mistakes</button>
+          <button class="btn-grade work"    onclick="grade({{ v.num }}, 'work')"    title="Needs a lot of work">✗ Needs work</button>
+        </div>
+        <!-- Verse text (fills middle, RTL) -->
+        <div class="verse-content">
+          <div class="verse-row">
+            <span class="verse-num" style="direction:ltr;">
+              {% if v.chapter is defined and v.verse is defined %}{{ v.chapter }}:{{ v.verse }}{% else %}{{ v.num }}{% endif %}
+            </span>
+            <span class="verse-text">{{ v.text }}</span>
+          </div>
+        </div>
       </div>
     </li>
     {% endfor %}
   </ul>
 
-  <!-- Sticky player bar — plays student's single recording file -->
+  <!-- Overall feedback note -->
+  <div class="feedback-note-wrap">
+    <label>Overall feedback note to student (optional)</label>
+    <textarea id="feedback-note" placeholder="e.g. Great effort overall! Focus on the trope for the last few pasukim...">{{ assignment.feedback_note or '' }}</textarea>
+  </div>
+
+  <!-- Student recording player bar -->
   <div class="player-bar">
     <button class="player-btn" id="btn-play" onclick="togglePlay()" title="Play / Pause">&#9654;</button>
     <div class="player-info">
@@ -129,49 +292,189 @@
 
 </div>
 
-<!-- Hidden audio element for the student's recording -->
+<!-- Hidden student recording -->
 <audio id="student-audio"
        src="/static/recordings/{{ assignment.recording_filename }}"
        preload="metadata"></audio>
 
+<!-- Submit feedback confirmation modal -->
+<div class="modal-overlay" id="submit-modal">
+  <div class="modal-box">
+    <div style="font-size:40px; margin-bottom:12px;">📋</div>
+    <h2>Submit Feedback?</h2>
+    <p>This will send your grading to <strong>{{ assignment.username }}</strong> and notify them to review and resubmit.</p>
+    <div class="modal-grade-summary" id="modal-summary"></div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeModal()">Go Back</button>
+      <button class="btn-modal-confirm" onclick="confirmSubmit()">Send Feedback ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save toast -->
+<div class="save-toast" id="save-toast">Progress saved</div>
+
 <script>
+// ══════════════════════════════════════════════
+// State
+// ══════════════════════════════════════════════
+const grades = {};  // { verseNum: "perfect"|"some"|"work" }
+
+// Restore saved grades from server
+(function restoreGrades() {
+  if (!SAVED_GRADES || typeof SAVED_GRADES !== 'object') return;
+  Object.entries(SAVED_GRADES).forEach(([num, g]) => {
+    const n = parseInt(num);
+    grades[n] = g;
+    applyGradeUI(n, g);
+  });
+  updateProgress();
+})();
+
+// ══════════════════════════════════════════════
+// Grading
+// ══════════════════════════════════════════════
+function grade(num, level) {
+  grades[num] = level;
+  applyGradeUI(num, level);
+  updateProgress();
+  autoSave();
+}
+
+function applyGradeUI(num, level) {
+  const li = document.getElementById('verse-' + num);
+  const btns = document.getElementById('grade-btns-' + num);
+  if (!li || !btns) return;
+  // Remove existing grade classes
+  li.classList.remove('graded-perfect', 'graded-some', 'graded-work');
+  li.classList.add('graded-' + level);
+  // Update button selected state
+  btns.querySelectorAll('.btn-grade').forEach(b => {
+    b.classList.remove('selected');
+    if (b.classList.contains(level)) b.classList.add('selected');
+  });
+}
+
+function updateProgress() {
+  const graded = Object.keys(grades).length;
+  document.getElementById('fab-progress').textContent =
+    `${graded} of ${TOTAL} pasukim graded`;
+}
+
+// ══════════════════════════════════════════════
+// Auto-save (debounced)
+// ══════════════════════════════════════════════
+let saveTimer = null;
+function autoSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(doSave, 1200);
+}
+
+async function doSave() {
+  try {
+    const note = document.getElementById('feedback-note')?.value.trim() || '';
+    await fetch(`/teacher/save-grades/${ASSIGNMENT_ID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grades, feedback_note: note })
+    });
+    showToast('Progress saved');
+  } catch(e) { /* silent */ }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('save-toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  setTimeout(() => t.classList.remove('visible'), 2200);
+}
+
+// ══════════════════════════════════════════════
+// Finish Later
+// ══════════════════════════════════════════════
+async function finishLater() {
+  try {
+    const note = document.getElementById('feedback-note')?.value.trim() || '';
+    await fetch(`/teacher/save-grades/${ASSIGNMENT_ID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grades, feedback_note: note })
+    });
+    showToast('Saved — redirecting...');
+    setTimeout(() => { window.location.href = '/teacher/dashboard'; }, 900);
+  } catch(e) {
+    showToast('Save failed — please try again');
+  }
+}
+
+// ══════════════════════════════════════════════
+// Submit Feedback Modal
+// ══════════════════════════════════════════════
+function openSubmitModal() {
+  // Build summary counts
+  const counts = { perfect: 0, some: 0, work: 0, ungraded: 0 };
+  VERSES.forEach(v => {
+    const g = grades[v.num];
+    if (g) counts[g]++; else counts.ungraded++;
+  });
+  const labels = { perfect: 'Perfect', some: 'Few mistakes', work: 'Needs work', ungraded: 'Ungraded' };
+  document.getElementById('modal-summary').innerHTML =
+    Object.entries(counts).map(([k, c]) =>
+      `<div class="mgs-item">
+        <div class="mgs-dot ${k}"></div>
+        <div class="mgs-count">${c}</div>
+        <div class="mgs-label">${labels[k]}</div>
+      </div>`
+    ).join('');
+  document.getElementById('submit-modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('submit-modal').classList.remove('active');
+}
+
+async function confirmSubmit() {
+  closeModal();
+  const note = document.getElementById('feedback-note').value.trim();
+  try {
+    const res = await fetch(`/teacher/submit-feedback/${ASSIGNMENT_ID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grades, feedback_note: note })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Feedback submitted!');
+      setTimeout(() => { window.location.href = '/teacher/dashboard'; }, 1000);
+    }
+  } catch(e) { showToast('Error — please try again.'); }
+}
+
+document.getElementById('submit-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ══════════════════════════════════════════════
+// Student recording player
+// ══════════════════════════════════════════════
 const audio    = document.getElementById('student-audio');
 const btnPlay  = document.getElementById('btn-play');
 const progress = document.getElementById('player-progress');
 
-// Format seconds → m:ss
 function fmt(s) {
-  const m = Math.floor(s / 60);
-  const sec = Math.floor(s % 60);
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
   return `${m}:${sec.toString().padStart(2, '0')}`;
 }
-
-// Update progress bar as audio plays
 audio.addEventListener('timeupdate', () => {
-  if (!audio.duration) return;
-  progress.textContent = `${fmt(audio.currentTime)} / ${fmt(audio.duration)}`;
+  if (audio.duration) progress.textContent = `${fmt(audio.currentTime)} / ${fmt(audio.duration)}`;
 });
-
-audio.addEventListener('ended', () => {
-  btnPlay.innerHTML = '&#9654;';
-  progress.textContent = 'Finished';
-});
-
-audio.addEventListener('error', () => {
-  progress.textContent = 'Could not load recording file.';
-  btnPlay.disabled = true;
-});
+audio.addEventListener('ended', () => { btnPlay.innerHTML = '&#9654;'; progress.textContent = 'Finished'; });
+audio.addEventListener('error', () => { progress.textContent = 'Could not load recording.'; btnPlay.disabled = true; });
 
 function togglePlay() {
-  if (audio.paused) {
-    audio.play();
-    btnPlay.innerHTML = '&#9646;&#9646;';
-  } else {
-    audio.pause();
-    btnPlay.innerHTML = '&#9654;';
-  }
+  if (audio.paused) { audio.play(); btnPlay.innerHTML = '&#9646;&#9646;'; }
+  else              { audio.pause(); btnPlay.innerHTML = '&#9654;'; }
 }
 </script>
-
 </body>
 </html>
