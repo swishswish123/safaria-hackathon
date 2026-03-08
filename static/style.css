@@ -183,3 +183,63 @@ nav {
 }
 .player-skip:hover { background: rgba(184,136,12,0.15); }
 .player-skip:disabled { opacity: 0.35; cursor: default; }
+
+/* ── Aliyah nav chips ── */
+.aliyah-nav {
+  margin-top: 0.7rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  direction: ltr;
+}
+.aliyah-chip {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid var(--gold);
+  border-radius: 20px;
+  color: var(--gold);
+  text-decoration: none;
+  font-size: 0.8rem;
+  transition: background 0.15s, color 0.15s;
+}
+.aliyah-chip:hover { background: var(--gold); color: white; }
+
+/* ── Aliyah section divider ── */
+.aliyah-header {
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding: 1.4rem 0.5rem 0.5rem;
+  border-top: 2px solid var(--gold);
+  margin-top: 0.5rem;
+}
+.aliyah-header:first-child { border-top: none; margin-top: 0; }
+.aliyah-he {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+.aliyah-en {
+  font-size: 0.95rem;
+  color: var(--gold);
+  font-style: italic;
+}
+.aliyah-ref {
+  font-size: 0.8rem;
+  color: var(--muted);
+  direction: ltr;
+}
+
+/* ── Verse rows: clickable ── */
+.verse-item { cursor: pointer; }
+.verse-row { transition: background 0.12s; }
+.verse-item:hover .verse-row { background: rgba(184,136,12,0.07); }
+.verse-item.active .verse-row {
+  background: rgba(184,136,12,0.15);
+  border-right: 3px solid var(--gold);
+}

@@ -53,7 +53,7 @@ def get_recordings(haftarah_ref):
         print(f"Recording for {anchorRef}: {media_url}")
 
         # play the recording here-----
-
+        
         # get corresponding text for the recording
         recording_text = get_parasha_text(anchorRef)
         print(f"Text for {anchorRef}: {recording_text}")
