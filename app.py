@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import random, string, re, requests
 from html import unescape
+import sefaria as sf
 
 app = Flask(__name__)
 app.secret_key = "leining_secret_123"
@@ -49,221 +50,27 @@ class Assignment(db.Model):
 
 
 # ================================================================== SEFARIA HELPERS
+# All Sefaria logic lives in sefaria.py.
+# These thin wrappers keep the rest of app.py unchanged.
 
-# Hebrew aliyah labels
-ALIYAH_NAMES_HE = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שביעי','מפטיר']
-ALIYAH_NAMES_EN = ["Rishon","Sheni","Shlishi","Revi'i","Chamishi","Shishi","Shevi'i","Maftir"]
-
-# Map our parsha dropdown names → Sefaria API parsha names
-SEFARIA_PARSHA_NAME = {
-    "Bereishit":"Bereishit","Noach":"Noach","Lech Lecha":"Lech-Lecha",
-    "Vayeira":"Vayera","Chayei Sarah":"Chayei-Sarah","Toldot":"Toldot",
-    "Vayeitzei":"Vayetzei","Vayishlach":"Vayishlach","Vayeishev":"Vayeshev",
-    "Mikeitz":"Miketz","Vayigash":"Vayigash","Vayechi":"Vayechi",
-    "Shemot":"Shemot","Vaeira":"Vaera","Bo":"Bo","Beshalach":"Beshalach",
-    "Yitro":"Yitro","Mishpatim":"Mishpatim","Terumah":"Terumah",
-    "Tetzaveh":"Tetzaveh","Ki Tisa":"Ki-Tisa","Vayakhel":"Vayakhel","Pekudei":"Pekudei",
-    "Vayikra":"Vayikra","Tzav":"Tzav","Shemini":"Shemini","Tazria":"Tazria",
-    "Metzora":"Metzora","Acharei Mot":"Achrei-Mot","Kedoshim":"Kedoshim",
-    "Emor":"Emor","Behar":"Behar","Bechukotai":"Bechukotai",
-    "Bamidbar":"Bamidbar","Naso":"Nasso","Behaalotecha":"Beha'alotecha",
-    "Shelach":"Sh'lach","Korach":"Korach","Chukat":"Chukat","Balak":"Balak",
-    "Pinchas":"Pinchas","Matot":"Matot","Masei":"Masei",
-    "Devarim":"Devarim","Vaetchanan":"Vaetchanan","Eikev":"Eikev","Re'eh":"Re'eh",
-    "Shoftim":"Shoftim","Ki Teitzei":"Ki-Teitzei","Ki Tavo":"Ki-Tavo",
-    "Nitzavim":"Nitzavim","Vayeilech":"Vayeilech","Haazinu":"Ha'Azinu",
-    "Vezot HaBerachah":"Vezot-Habracha",
-}
-
-# Map our aliyah dropdown labels → 0-based index into the aliyot list
 ALIYAH_INDEX = {
     "First Aliyah": 0, "Second Aliyah": 1, "Third Aliyah": 2,
     "Fourth Aliyah": 3, "Fifth Aliyah": 4, "Sixth Aliyah": 5,
-    "Seventh Aliyah": 6, "Maftir": 7, "Haftorah": None,  # haftorah handled separately
+    "Seventh Aliyah": 6, "Maftir": 7, "Haftorah": None,
 }
 
-def clean_verse(text):
-    """Strip HTML tags, decode entities, normalise whitespace."""
-    if not text: return ''
-    text = re.sub(r'<[^>]+>', '', text)
-    text = unescape(text)
-    text = re.sub(r'&[a-zA-Z]+;|&#\d+;|&#x[0-9a-fA-F]+;', '', text)
-    text = text.replace('\u00a0', ' ').replace('\u2009', ' ')
-    return text.strip()
-
-def flatten_verses(node):
-    """Recursively flatten nested Hebrew text into flat list."""
-    if not node: return []
-    if isinstance(node[0], str):
-        return [clean_verse(v) for v in node if v]
-    return [v for sub in node for v in flatten_verses(sub)]
-
-def ref_to_verse_range(aliyah_ref, chapter_offsets):
-    """Convert a Sefaria ref like 'Genesis 6:9-6:22' into (start, end) global indices."""
-    m = re.search(r'(\d+):(\d+)-(\d+):(\d+)', aliyah_ref)
-    if not m:
-        m2 = re.search(r'(\d+):(\d+)-(\d+)$', aliyah_ref)
-        if m2:
-            ch, vs, ve = int(m2.group(1)), int(m2.group(2)), int(m2.group(3))
-            off = chapter_offsets.get(ch, 1)
-            return (off + vs - 1, off + ve - 1)
-        return None
-    ch_s, v_s = int(m.group(1)), int(m.group(2))
-    ch_e, v_e = int(m.group(3)), int(m.group(4))
-    return (chapter_offsets.get(ch_s, 1) + v_s - 1,
-            chapter_offsets.get(ch_e, 1) + v_e - 1)
-
 def get_section_data(ref, aliyot_refs=None):
-    """
-    Fetch verses + recordings from Sefaria for a given ref.
-    Recordings are matched to verses by their chapter:verse position
-    within the ref, so they line up correctly even mid-parasha.
-    Returns (verses list, aliyot list) ready for parasha.html.
-    """
-    try:
-        text_data = requests.get(
-            f"https://www.sefaria.org/api/texts/{ref}",
-            timeout=8
-        ).json()
-    except Exception:
-        return [], []
-
-    raw_he = text_data.get('he', [])
-
-    # Determine the starting chapter:verse from the ref (e.g. "Genesis 12:1-12:9")
-    # so we can match recording anchorRefs accurately
-    start_ch_match = re.search(r'(\d+):(\d+)', ref)
-    start_ch  = int(start_ch_match.group(1)) if start_ch_match else 1
-    start_v   = int(start_ch_match.group(2)) if start_ch_match else 1
-
-    # Build chapter offsets for aliyah boundary mapping
-    chapter_offsets = {}
-    global_idx = 1
-    if raw_he and isinstance(raw_he[0], list):
-        for ci, ch in enumerate(raw_he):
-            chapter_offsets[start_ch + ci] = global_idx
-            global_idx += len([v for v in ch if v])
-    else:
-        chapter_offsets[start_ch] = 1
-
-    verses_flat = flatten_verses(raw_he)
-
-    # Fetch recordings for this specific ref
-    try:
-        media_list = requests.get(
-            f"https://www.sefaria.org/api/related/{ref}",
-            timeout=6
-        ).json().get('media', [])
-    except Exception:
-        media_list = []
-
-    # Build a mapping of (chapter, verse) -> recording
-    # Sefaria anchorRef looks like "Genesis 12:3" or "Genesis 12:3-5"
-    recordings_by_cv = {}
-    for rec in media_list:
-        anchor = rec.get('anchorRef', '')
-        m2 = re.search(r'(\d+):(\d+)', anchor)
-        if m2:
-            ch, v = int(m2.group(1)), int(m2.group(2))
-            if (ch, v) not in recordings_by_cv:
-                recordings_by_cv[(ch, v)] = {
-                    'media_url':   rec.get('media_url', ''),
-                    'description': rec.get('description', ''),
-                    'anchor':      anchor,
-                }
-
-    # Build aliyot
-    aliyot = []
-    if aliyot_refs:
-        for i, aref in enumerate(aliyot_refs):
-            rng = ref_to_verse_range(aref, chapter_offsets)
-            if rng:
-                aliyot.append({
-                    'name_he': ALIYAH_NAMES_HE[i] if i < len(ALIYAH_NAMES_HE) else f'עלייה {i+1}',
-                    'name_en': ALIYAH_NAMES_EN[i] if i < len(ALIYAH_NAMES_EN) else f'Aliyah {i+1}',
-                    'start': rng[0], 'end': rng[1], 'ref': aref,
-                })
-
-    # Zip verses — track actual chapter:verse as we walk through the text
-    verses = []
-    flat_idx = 0  # position within verses_flat
-    cur_ch = start_ch
-    cur_v  = start_v
-
-    # If multi-chapter, walk chapter by chapter
-    if raw_he and isinstance(raw_he[0], list):
-        for ci, ch_verses in enumerate(raw_he):
-            ch_num = start_ch + ci
-            for vi, raw_v in enumerate(ch_verses):
-                if not raw_v:
-                    cur_v += 1
-                    continue
-                v_num = start_v + vi if ci == 0 else vi + 1
-                text  = clean_verse(raw_v)
-                rec   = recordings_by_cv.get((ch_num, v_num))
-                aliyah_idx = next((ai for ai, al in enumerate(aliyot)
-                                   if al['start'] <= flat_idx + 1 <= al['end']), None)
-                verses.append({
-                    'num': flat_idx + 1, 'text': text,
-                    'chapter': ch_num, 'verse': v_num,
-                    'media_url':   rec['media_url']   if rec else '',
-                    'description': rec['description'] if rec else '',
-                    'anchor':      rec['anchor']       if rec else '',
-                    'aliyah_idx':  aliyah_idx,
-                })
-                flat_idx += 1
-    else:
-        # Single chapter
-        for vi, raw_v in enumerate(raw_he if isinstance(raw_he, list) else []):
-            if not raw_v: continue
-            v_num = start_v + vi
-            text  = clean_verse(raw_v) if isinstance(raw_v, str) else ''
-            if not text: continue
-            rec = recordings_by_cv.get((start_ch, v_num))
-            verses.append({
-                'num': flat_idx + 1, 'text': text,
-                'chapter': start_ch, 'verse': v_num,
-                'media_url':   rec['media_url']   if rec else '',
-                'description': rec['description'] if rec else '',
-                'anchor':      rec['anchor']       if rec else '',
-                'aliyah_idx':  None,
-            })
-            flat_idx += 1
-
-    return verses, aliyot
+    """Fetch verses for a ref. Returns (verses, []) — aliyot unused now."""
+    return sf.get_verses_for_ref(ref), []
 
 def fetch_parasha_aliyot(parasha_name):
-    """
-    Ask the Sefaria calendar API for the aliyot refs of a given parasha.
-    Returns list of ref strings, one per aliyah.
-    """
-    try:
-        data = requests.get("https://www.sefaria.org/api/calendars", timeout=6).json()
-        for item in data.get('calendar_items', []):
-            if item['title']['en'] == 'Parashat Hashavua':
-                name_en = item.get('displayValue', {}).get('en', '')
-                sefaria_name = SEFARIA_PARSHA_NAME.get(parasha_name, '')
-                # Accept if it matches OR just return whatever is current (for preview)
-                return item.get('extraDetails', {}).get('aliyot', [])
-    except Exception:
-        pass
-    return []
+    """Return the list of aliyah refs for a parasha from the library."""
+    return sf.get_aliyot_for_parasha(parasha_name)
 
 def build_sefaria_ref(parasha, aliyah_label):
-    """
-    Given parasha name + aliyah label, return the Sefaria ref string for that aliyah.
-    Uses the calendar API to get real refs.
-    Returns (ref_string, display_name) or (None, None) on failure.
-    """
-    aliyot_refs = fetch_parasha_aliyot(parasha)
-    idx = ALIYAH_INDEX.get(aliyah_label)
-    if idx is None or not aliyot_refs or idx >= len(aliyot_refs):
-        # Fallback: just use the parasha name as the ref
-        sname = SEFARIA_PARSHA_NAME.get(parasha, parasha)
-        return sname, parasha
-    ref = aliyot_refs[idx]
+    """Resolve a parasha + aliyah label to a Sefaria ref."""
+    ref = sf.get_aliyah_ref(parasha, aliyah_label)
     return ref, f"{parasha} – {aliyah_label}"
-
 
 # ================================================================== GENERAL HELPERS
 def generate_pin():
@@ -503,8 +310,10 @@ def assign(student_username):
             db.session.commit()
             return redirect(url_for("teacher_dashboard"))
     existing = Assignment.query.filter_by(username=student_username).all()
+    parasha_list = sf.get_parasha_list()
     return render_template("assign.html", teacher=teacher, student=student,
-                           existing=existing, error=error)
+                           existing=existing, error=error,
+                           parasha_list=parasha_list)
 
 # ------------------------------------------------------------------ SEFARIA PREVIEW API
 # Called by JavaScript on the assign page to show a live verse preview

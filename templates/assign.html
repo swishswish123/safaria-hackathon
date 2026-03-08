@@ -221,31 +221,14 @@
     </div>
 
     <script>
-        // All parshiot organized by sefer
-        const parshiot = {
-            "Bereishit": [
-                "Bereishit", "Noach", "Lech Lecha", "Vayeira", "Chayei Sarah",
-                "Toldot", "Vayeitzei", "Vayishlach", "Vayeishev", "Mikeitz",
-                "Vayigash", "Vayechi"
-            ],
-            "Shemot": [
-                "Shemot", "Vaeira", "Bo", "Beshalach", "Yitro", "Mishpatim",
-                "Terumah", "Tetzaveh", "Ki Tisa", "Vayakhel", "Pekudei"
-            ],
-            "Vayikra": [
-                "Vayikra", "Tzav", "Shemini", "Tazria", "Metzora", "Acharei Mot",
-                "Kedoshim", "Emor", "Behar", "Bechukotai"
-            ],
-            "Bamidbar": [
-                "Bamidbar", "Naso", "Behaalotecha", "Shelach", "Korach",
-                "Chukat", "Balak", "Pinchas", "Matot", "Masei"
-            ],
-            "Devarim": [
-                "Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim",
-                "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech",
-                "Haazinu", "Vezot HaBerachah"
-            ]
-        };
+        // Parshiot injected from the server (torah_library.json — no hardcoding)
+        // parasha_list is [{"en": "Bereishit", "sefer": "Bereishit"}, ...]
+        const PARASHA_LIST = {{ parasha_list | tojson }};
+        const parshiot = {};
+        PARASHA_LIST.forEach(p => {
+            if (!parshiot[p.sefer]) parshiot[p.sefer] = [];
+            parshiot[p.sefer].push(p.en);
+        });
 
         function loadParshiot() {
             const sefer       = document.getElementById("sefer-select").value;
