@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create Account – ScroLein</title>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='student.css') }}"/>
+</head>
+<body class="auth-page">
+
+  <div class="auth-logo"><img src="/static/scrolein_logo.png" alt="ScroLein"/></div>
+  <p class="auth-tagline">Your personal Torah leining practice companion</p>
+
+  <div class="auth-choice-cards">
+    <a href="/register/student" class="auth-choice-card">
+      <div class="auth-choice-icon">📖</div>
+      <div class="auth-choice-title">Student</div>
+      <div class="auth-choice-desc">Practice and submit your leining assignments</div>
+    </a>
+    <a href="/register/teacher" class="auth-choice-card">
+      <div class="auth-choice-icon">🎓</div>
+      <div class="auth-choice-title">Teacher</div>
+      <div class="auth-choice-desc">Assign work and review student recordings</div>
+    </a>
+  </div>
+
+  <div style="margin-top:28px; font-size:13px; color:#aaa; font-family:Arial,sans-serif;">
+    Already have an account? <a href="/login" style="color:#b8880c;">Sign in</a>
+  </div>
+
+</body>
+</html>

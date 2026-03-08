@@ -1,10 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import os
 from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-import random, string, re, requests
-from html import unescape
+import random, string, json as _json
 
 app = Flask(__name__)
 app.secret_key = "leining_secret_123"
@@ -14,7 +13,6 @@ app.config["RECORDING_FOLDER"] = os.path.join(os.path.dirname(__file__), "static
 os.makedirs(app.config["RECORDING_FOLDER"], exist_ok=True)
 db = SQLAlchemy(app)
 
-import json as _json
 @app.template_filter('from_json')
 def from_json_filter(s):
     try: return _json.loads(s) if s else {}
@@ -50,232 +48,66 @@ class Assignment(db.Model):
     submitted_at = db.Column(db.DateTime, nullable=True)
     notes        = db.Column(db.Text, nullable=True)
     assigned_by  = db.Column(db.String(80), nullable=True)
-    sefaria_ref        = db.Column(db.String(200), nullable=True)  # e.g. "Genesis 6:9-11:32"
+    sefaria_ref                = db.Column(db.String(200), nullable=True)
     recording_filename         = db.Column(db.String(200), nullable=True)
     teacher_recording_filename = db.Column(db.String(200), nullable=True)
     recording_choice           = db.Column(db.String(20),  nullable=True, default='included')
-    verse_grades          = db.Column(db.Text,     nullable=True)
-    feedback_note         = db.Column(db.Text,     nullable=True)
-    feedback_submitted    = db.Column(db.Boolean,  default=False)
-    feedback_seen         = db.Column(db.Boolean,  default=True)
+    verse_grades          = db.Column(db.Text,    nullable=True)
+    feedback_note         = db.Column(db.Text,    nullable=True)
+    feedback_submitted    = db.Column(db.Boolean, default=False)
+    feedback_seen         = db.Column(db.Boolean, default=True)
     feedback_submitted_at = db.Column(db.DateTime, nullable=True)
 
 
 # ================================================================== SEFARIA HELPERS
+# All Torah data comes from torah_library.json via sefaria.py.
+# No live calendar API calls — every parasha and aliyah ref is pre-built.
 
-# Hebrew aliyah labels
-ALIYAH_NAMES_HE = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שביעי','מפטיר']
-ALIYAH_NAMES_EN = ["Rishon","Sheni","Shlishi","Revi'i","Chamishi","Shishi","Shevi'i","Maftir"]
+from sefaria import (
+    get_library,
+    get_parasha_list,
+    get_aliyah_ref,
+    get_aliyot_for_parasha,
+    get_verses_for_ref,
+    ALIYAH_LABELS,
+)
 
-# Map our parsha dropdown names → Sefaria API parsha names
-SEFARIA_PARSHA_NAME = {
-    "Bereishit":"Bereishit","Noach":"Noach","Lech Lecha":"Lech-Lecha",
-    "Vayeira":"Vayera","Chayei Sarah":"Chayei-Sarah","Toldot":"Toldot",
-    "Vayeitzei":"Vayetzei","Vayishlach":"Vayishlach","Vayeishev":"Vayeshev",
-    "Mikeitz":"Miketz","Vayigash":"Vayigash","Vayechi":"Vayechi",
-    "Shemot":"Shemot","Vaeira":"Vaera","Bo":"Bo","Beshalach":"Beshalach",
-    "Yitro":"Yitro","Mishpatim":"Mishpatim","Terumah":"Terumah",
-    "Tetzaveh":"Tetzaveh","Ki Tisa":"Ki-Tisa","Vayakhel":"Vayakhel","Pekudei":"Pekudei",
-    "Vayikra":"Vayikra","Tzav":"Tzav","Shemini":"Shemini","Tazria":"Tazria",
-    "Metzora":"Metzora","Acharei Mot":"Achrei-Mot","Kedoshim":"Kedoshim",
-    "Emor":"Emor","Behar":"Behar","Bechukotai":"Bechukotai",
-    "Bamidbar":"Bamidbar","Naso":"Nasso","Behaalotecha":"Beha'alotecha",
-    "Shelach":"Sh'lach","Korach":"Korach","Chukat":"Chukat","Balak":"Balak",
-    "Pinchas":"Pinchas","Matot":"Matot","Masei":"Masei",
-    "Devarim":"Devarim","Vaetchanan":"Vaetchanan","Eikev":"Eikev","Re'eh":"Re'eh",
-    "Shoftim":"Shoftim","Ki Teitzei":"Ki-Teitzei","Ki Tavo":"Ki-Tavo",
-    "Nitzavim":"Nitzavim","Vayeilech":"Vayeilech","Haazinu":"Ha'Azinu",
-    "Vezot HaBerachah":"Vezot-Habracha",
-}
+# Aliyah dropdown labels shown in the assign form
+ASSIGN_ALIYAH_LABELS = [
+    "First Aliyah", "Second Aliyah", "Third Aliyah", "Fourth Aliyah",
+    "Fifth Aliyah", "Sixth Aliyah", "Seventh Aliyah",
+]
 
-# Map our aliyah dropdown labels → 0-based index into the aliyot list
-ALIYAH_INDEX = {
-    "First Aliyah": 0, "Second Aliyah": 1, "Third Aliyah": 2,
-    "Fourth Aliyah": 3, "Fifth Aliyah": 4, "Sixth Aliyah": 5,
-    "Seventh Aliyah": 6, "Maftir": 7, "Haftorah": None,  # haftorah handled separately
-}
+# Map label string → 0-based index into the aliyot list
+ALIYAH_INDEX = {label: i for i, label in enumerate(ASSIGN_ALIYAH_LABELS)}
 
-def clean_verse(text):
-    """Strip HTML tags, decode entities, normalise whitespace."""
-    if not text: return ''
-    text = re.sub(r'<[^>]+>', '', text)
-    text = unescape(text)
-    text = re.sub(r'&[a-zA-Z]+;|&#\d+;|&#x[0-9a-fA-F]+;', '', text)
-    text = text.replace('\u00a0', ' ').replace('\u2009', ' ')
-    return text.strip()
-
-def flatten_verses(node):
-    """Recursively flatten nested Hebrew text into flat list."""
-    if not node: return []
-    if isinstance(node[0], str):
-        return [clean_verse(v) for v in node if v]
-    return [v for sub in node for v in flatten_verses(sub)]
-
-def ref_to_verse_range(aliyah_ref, chapter_offsets):
-    """Convert a Sefaria ref like 'Genesis 6:9-6:22' into (start, end) global indices."""
-    m = re.search(r'(\d+):(\d+)-(\d+):(\d+)', aliyah_ref)
-    if not m:
-        m2 = re.search(r'(\d+):(\d+)-(\d+)$', aliyah_ref)
-        if m2:
-            ch, vs, ve = int(m2.group(1)), int(m2.group(2)), int(m2.group(3))
-            off = chapter_offsets.get(ch, 1)
-            return (off + vs - 1, off + ve - 1)
-        return None
-    ch_s, v_s = int(m.group(1)), int(m.group(2))
-    ch_e, v_e = int(m.group(3)), int(m.group(4))
-    return (chapter_offsets.get(ch_s, 1) + v_s - 1,
-            chapter_offsets.get(ch_e, 1) + v_e - 1)
-
-def get_section_data(ref, aliyot_refs=None):
+def get_verses(parasha_name, aliyah_label, fallback_ref=None):
     """
-    Fetch verses + recordings from Sefaria for a given ref.
-    Recordings are matched to verses by their chapter:verse position
-    within the ref, so they line up correctly even mid-parasha.
-    Returns (verses list, aliyot list) ready for parasha.html.
+    Unified verse-fetching helper used by all routes (read, review, preview,
+    feedback, record-nusach).  Returns a list of verse dicts ready for templates.
+    Uses the library-backed aliyah ref; falls back to fallback_ref if needed.
     """
-    try:
-        text_data = requests.get(
-            f"https://www.sefaria.org/api/texts/{ref}",
-            timeout=8
-        ).json()
-    except Exception:
-        return [], []
-
-    raw_he = text_data.get('he', [])
-
-    # Determine the starting chapter:verse from the ref (e.g. "Genesis 12:1-12:9")
-    # so we can match recording anchorRefs accurately
-    start_ch_match = re.search(r'(\d+):(\d+)', ref)
-    start_ch  = int(start_ch_match.group(1)) if start_ch_match else 1
-    start_v   = int(start_ch_match.group(2)) if start_ch_match else 1
-
-    # Build chapter offsets for aliyah boundary mapping
-    chapter_offsets = {}
-    global_idx = 1
-    if raw_he and isinstance(raw_he[0], list):
-        for ci, ch in enumerate(raw_he):
-            chapter_offsets[start_ch + ci] = global_idx
-            global_idx += len([v for v in ch if v])
-    else:
-        chapter_offsets[start_ch] = 1
-
-    verses_flat = flatten_verses(raw_he)
-
-    # Fetch recordings for this specific ref
-    try:
-        media_list = requests.get(
-            f"https://www.sefaria.org/api/related/{ref}",
-            timeout=6
-        ).json().get('media', [])
-    except Exception:
-        media_list = []
-
-    # Build a mapping of (chapter, verse) -> recording
-    # Sefaria anchorRef looks like "Genesis 12:3" or "Genesis 12:3-5"
-    recordings_by_cv = {}
-    for rec in media_list:
-        anchor = rec.get('anchorRef', '')
-        m2 = re.search(r'(\d+):(\d+)', anchor)
-        if m2:
-            ch, v = int(m2.group(1)), int(m2.group(2))
-            if (ch, v) not in recordings_by_cv:
-                recordings_by_cv[(ch, v)] = {
-                    'media_url':   rec.get('media_url', ''),
-                    'description': rec.get('description', ''),
-                    'anchor':      anchor,
-                }
-
-    # Build aliyot
-    aliyot = []
-    if aliyot_refs:
-        for i, aref in enumerate(aliyot_refs):
-            rng = ref_to_verse_range(aref, chapter_offsets)
-            if rng:
-                aliyot.append({
-                    'name_he': ALIYAH_NAMES_HE[i] if i < len(ALIYAH_NAMES_HE) else f'עלייה {i+1}',
-                    'name_en': ALIYAH_NAMES_EN[i] if i < len(ALIYAH_NAMES_EN) else f'Aliyah {i+1}',
-                    'start': rng[0], 'end': rng[1], 'ref': aref,
-                })
-
-    # Zip verses — track actual chapter:verse as we walk through the text
-    verses = []
-    flat_idx = 0  # position within verses_flat
-    cur_ch = start_ch
-    cur_v  = start_v
-
-    # If multi-chapter, walk chapter by chapter
-    if raw_he and isinstance(raw_he[0], list):
-        for ci, ch_verses in enumerate(raw_he):
-            ch_num = start_ch + ci
-            for vi, raw_v in enumerate(ch_verses):
-                if not raw_v:
-                    cur_v += 1
-                    continue
-                v_num = start_v + vi if ci == 0 else vi + 1
-                text  = clean_verse(raw_v)
-                rec   = recordings_by_cv.get((ch_num, v_num))
-                aliyah_idx = next((ai for ai, al in enumerate(aliyot)
-                                   if al['start'] <= flat_idx + 1 <= al['end']), None)
-                verses.append({
-                    'num': flat_idx + 1, 'text': text,
-                    'chapter': ch_num, 'verse': v_num,
-                    'media_url':   rec['media_url']   if rec else '',
-                    'description': rec['description'] if rec else '',
-                    'anchor':      rec['anchor']       if rec else '',
-                    'aliyah_idx':  aliyah_idx,
-                })
-                flat_idx += 1
-    else:
-        # Single chapter
-        for vi, raw_v in enumerate(raw_he if isinstance(raw_he, list) else []):
-            if not raw_v: continue
-            v_num = start_v + vi
-            text  = clean_verse(raw_v) if isinstance(raw_v, str) else ''
-            if not text: continue
-            rec = recordings_by_cv.get((start_ch, v_num))
-            verses.append({
-                'num': flat_idx + 1, 'text': text,
-                'chapter': start_ch, 'verse': v_num,
-                'media_url':   rec['media_url']   if rec else '',
-                'description': rec['description'] if rec else '',
-                'anchor':      rec['anchor']       if rec else '',
-                'aliyah_idx':  None,
-            })
-            flat_idx += 1
-
-    return verses, aliyot
-
-def fetch_parasha_aliyot(parasha_name):
-    """
-    Ask the Sefaria calendar API for the aliyot refs of a given parasha.
-    Returns list of ref strings, one per aliyah.
-    """
-    try:
-        data = requests.get("https://www.sefaria.org/api/calendars", timeout=6).json()
-        for item in data.get('calendar_items', []):
-            if item['title']['en'] == 'Parashat Hashavua':
-                name_en = item.get('displayValue', {}).get('en', '')
-                sefaria_name = SEFARIA_PARSHA_NAME.get(parasha_name, '')
-                # Accept if it matches OR just return whatever is current (for preview)
-                return item.get('extraDetails', {}).get('aliyot', [])
-    except Exception:
-        pass
+    aliyah_ref = get_aliyah_ref(parasha_name, aliyah_label)
+    if aliyah_ref:
+        return get_verses_for_ref(aliyah_ref)
+    if fallback_ref:
+        return get_verses_for_ref(fallback_ref)
     return []
 
 def build_sefaria_ref(parasha, aliyah_label):
     """
-    Given parasha name + aliyah label, return the Sefaria ref string for that aliyah.
-    Uses the calendar API to get real refs.
-    Returns (ref_string, display_name) or (None, None) on failure.
+    Return the exact Sefaria ref string for one aliyah of a parasha.
+    Used when saving a new assignment.
     """
-    aliyot_refs = fetch_parasha_aliyot(parasha)
-    idx = ALIYAH_INDEX.get(aliyah_label)
-    if idx is None or not aliyot_refs or idx >= len(aliyot_refs):
-        # Fallback: just use the parasha name as the ref
-        sname = SEFARIA_PARSHA_NAME.get(parasha, parasha)
-        return sname, parasha
-    ref = aliyot_refs[idx]
-    return ref, f"{parasha} – {aliyah_label}"
+    ref = get_aliyah_ref(parasha, aliyah_label)
+    if ref:
+        return ref, f"{parasha} – {aliyah_label}"
+    # Fallback: use the whole-parasha ref from the library
+    lib = get_library()
+    for sefer in lib:
+        if parasha in lib[sefer]:
+            return lib[sefer][parasha]["ref"], parasha
+    return parasha, parasha
 
 
 # ================================================================== GENERAL HELPERS
@@ -321,11 +153,11 @@ with app.app_context():
          "aliyah":"Fifth Aliyah","due_date":"March 28, 2026",
          "submitted":False,"notes":"","sefaria_ref":"Lech-Lecha"},
         {"username":"Gedaliah","assigned_by":"Rabbi_Cohen",
-         "title":"Parshat Bereishit – First Aliyah","parasha":"Bereishit",
+         "title":"Parshat Bereishit – First Aliyah","parasha":"Bereshit",
          "aliyah":"First Aliyah","due_date":"March 1, 2026",
          "submitted":True,"submitted_at":datetime(2026,2,28,14,30),
          "notes":"I practiced this one a lot — felt confident with the trope!",
-         "sefaria_ref":"Bereishit"},
+         "sefaria_ref":"Genesis 1:1-2:3"},
     ]
     for a in gedaliah_assignments:
         if not Assignment.query.filter_by(username=a["username"], title=a["title"]).first():
@@ -337,11 +169,11 @@ with app.app_context():
 
 @app.route("/")
 def home():
-    return render_template("home.html")
+    return render_template("shared/home.html")
 
 @app.route("/register")
 def register():
-    return render_template("register.html")
+    return render_template("shared/register.html")
 
 @app.route("/register/student", methods=["GET","POST"])
 def register_student():
@@ -358,7 +190,7 @@ def register_student():
             db.session.commit()
             session["pending_user"] = username
             return redirect(url_for("class_id"))
-    return render_template("register_student.html", error=error)
+    return render_template("shared/register_student.html", error=error)
 
 @app.route("/register/teacher", methods=["GET","POST"])
 def register_teacher():
@@ -379,7 +211,7 @@ def register_teacher():
             session["username"] = username
             session["new_pin"]  = pin
             return redirect(url_for("teacher_dashboard"))
-    return render_template("register_teacher.html", error=error)
+    return render_template("shared/register_teacher.html", error=error)
 
 @app.route("/login", methods=["GET","POST"])
 def login():
@@ -397,7 +229,7 @@ def login():
         else:
             session["username"] = username
             return redirect(url_for("teacher_dashboard" if user.role=="teacher" else "dashboard"))
-    return render_template("login.html", error=error, error_field=error_field)
+    return render_template("shared/login.html", error=error, error_field=error_field)
 
 @app.route("/logout")
 def logout():
@@ -422,7 +254,7 @@ def class_id():
             session.pop("pending_user")
             session["username"] = username
             return redirect(url_for("dashboard"))
-    return render_template("class_id.html", error=error, username=username)
+    return render_template("shared/class_id.html", error=error, username=username)
 
 @app.route("/add-class", methods=["GET","POST"])
 def add_class():
@@ -439,7 +271,8 @@ def add_class():
             enroll_student(username, entered_id)
             db.session.commit()
             success = f"Successfully joined class {entered_id}!"
-    return render_template("add_class.html", username=username, error=error, success=success)
+    return render_template("student/add_class.html", username=username, error=error, success=success)
+
 
 # ------------------------------------------------------------------ STUDENT DASHBOARD
 @app.route("/dashboard")
@@ -458,7 +291,6 @@ def dashboard():
         all_assignments = Assignment.query.filter_by(username=username, assigned_by=teacher.username).all()
         pending   = [a for a in all_assignments if not a.submitted and not a.feedback_submitted]
         completed = [a for a in all_assignments if a.submitted and not a.feedback_submitted]
-        # Annotate feedback assignments with parsed grade counts
         feedback_list = []
         for a in all_assignments:
             if not a.feedback_submitted: continue
@@ -479,7 +311,6 @@ def dashboard():
             "feedback":     feedback_list,
         })
 
-    # Assignments from teachers not in current enrollments
     known = [s["teacher_name"] for s in teacher_sections]
     other_q = Assignment.query.filter_by(username=username)
     if known:
@@ -494,13 +325,13 @@ def dashboard():
             "feedback":     [a for a in other_all if a.feedback_submitted],
         })
 
-    # New (unseen) feedback — for popup on login
     new_feedback = Assignment.query.filter_by(
         username=username, feedback_submitted=True, feedback_seen=False).all()
 
-    return render_template("dashboard.html", username=username,
+    return render_template("student/dashboard.html", username=username,
                            teacher_sections=teacher_sections,
                            new_feedback=new_feedback)
+
 
 # ------------------------------------------------------------------ TEACHER DASHBOARD
 @app.route("/teacher/dashboard")
@@ -509,19 +340,21 @@ def teacher_dashboard():
     if not username: return redirect(url_for("home"))
     teacher = User.query.filter_by(username=username, role="teacher").first()
     if not teacher: return redirect(url_for("dashboard"))
-    # Use StudentClass table (correct) instead of legacy class_id field
-    enrollments = StudentClass.query.filter_by(pin=teacher.teacher_pin).all()
+
+    # Use StudentClass (correct enrollment table, not legacy class_id)
+    enrollments  = StudentClass.query.filter_by(pin=teacher.teacher_pin).all()
     student_data = []
     for e in enrollments:
         s = User.query.filter_by(username=e.username, role="student").first()
         if not s: continue
         total     = Assignment.query.filter_by(username=s.username, assigned_by=username).count()
         submitted = Assignment.query.filter_by(username=s.username, assigned_by=username, submitted=True).count()
-        student_data.append({"username":s.username,"total":total,
-                              "submitted":submitted,"pending":total-submitted})
+        student_data.append({"username": s.username, "total": total,
+                              "submitted": submitted, "pending": total - submitted})
     new_pin = session.pop("new_pin", None)
-    return render_template("teacher_dashboard.html", teacher=teacher,
+    return render_template("teacher/dashboard.html", teacher=teacher,
                            student_data=student_data, new_pin=new_pin)
+
 
 # ------------------------------------------------------------------ ASSIGN WORK
 @app.route("/teacher/assign/<student_username>", methods=["GET","POST"])
@@ -532,14 +365,24 @@ def assign(student_username):
     if not teacher: return redirect(url_for("home"))
     student = User.query.filter_by(username=student_username, role="student").first()
     if not student: return redirect(url_for("teacher_dashboard"))
+
+    lib    = get_library()
+    sfarim = list(lib.keys())            # ["Bereshit", "Shemot", ...]
+
+    # Step 1 — teacher picks a sefer via GET ?sefer=
+    selected_sefer = request.args.get("sefer") or request.form.get("sefer")
+    parshiot       = list(lib[selected_sefer].keys()) if selected_sefer and selected_sefer in lib else []
+    selected_parsha = request.form.get("parasha", "")
+
     error = None
     if request.method == "POST":
-        title            = request.form["title"].strip()
-        parasha          = request.form["parasha"].strip()
-        aliyah           = request.form["aliyah"].strip()
-        due_date         = request.form["due_date"].strip()
-        notes            = request.form.get("notes","").strip()
+        title            = request.form.get("title", "").strip()
+        parasha          = request.form.get("parasha", "").strip()
+        aliyah           = request.form.get("aliyah", "").strip()
+        due_date         = request.form.get("due_date", "").strip()
+        notes            = request.form.get("notes", "").strip()
         recording_choice = request.form.get("recording_choice", "included")
+
         if not title or not parasha or not aliyah:
             error = "Please fill in all required fields."
         else:
@@ -548,40 +391,42 @@ def assign(student_username):
                 username=student_username, title=title, parasha=parasha,
                 aliyah=aliyah, due_date=due_date, assigned_by=username,
                 notes=notes, sefaria_ref=sefaria_ref,
-                recording_choice=recording_choice
+                recording_choice=recording_choice,
             )
             db.session.add(new_assignment)
             db.session.commit()
             if recording_choice == "own":
                 return redirect(url_for("teacher_record_nusach", assignment_id=new_assignment.id))
             return redirect(url_for("teacher_dashboard"))
+
     existing = Assignment.query.filter_by(username=student_username).all()
-    return render_template("assign.html", teacher=teacher, student=student,
-                           existing=existing, error=error)
+    return render_template("teacher/assign.html",
+        teacher         = teacher,
+        student         = student,
+        existing        = existing,
+        error           = error,
+        sfarim          = sfarim,
+        selected_sefer  = selected_sefer,
+        parshiot        = parshiot,
+        selected_parsha = selected_parsha,
+        aliyah_labels   = ASSIGN_ALIYAH_LABELS,
+    )
+
 
 # ------------------------------------------------------------------ SEFARIA PREVIEW API
-# Called by JavaScript on the assign page to show a live verse preview
 @app.route("/api/sefaria-preview")
 def sefaria_preview():
-    parasha = request.args.get("parasha","").strip()
-    aliyah  = request.args.get("aliyah","").strip()
+    parasha = request.args.get("parasha", "").strip()
+    aliyah  = request.args.get("aliyah",  "").strip()
     if not parasha or not aliyah:
         return jsonify({"error": "Missing parasha or aliyah"}), 400
-
-    aliyot_refs = fetch_parasha_aliyot(parasha)
-    idx = ALIYAH_INDEX.get(aliyah)
-
-    if idx is None:
-        return jsonify({"error": "Haftorah preview not supported yet"}), 400
-    if not aliyot_refs or idx >= len(aliyot_refs):
-        sname = SEFARIA_PARSHA_NAME.get(parasha, parasha)
-        return jsonify({"ref": sname, "verses": [], "note": "Aliyah boundaries unavailable — showing full parasha on the reading page."})
-
-    ref = aliyot_refs[idx]
-    verses, _ = get_section_data(ref)
-    # Return first 6 verses as a preview
+    ref = get_aliyah_ref(parasha, aliyah)
+    if not ref:
+        return jsonify({"error": "Parasha or aliyah not found in library"}), 404
+    verses = get_verses_for_ref(ref)
     preview = [{"num": v["num"], "text": v["text"]} for v in verses[:6]]
     return jsonify({"ref": ref, "verses": preview})
+
 
 # ------------------------------------------------------------------ READ TEXT (student)
 @app.route("/read/<int:assignment_id>")
@@ -591,36 +436,17 @@ def read_assignment(assignment_id):
     assignment = Assignment.query.get(assignment_id)
     if not assignment or assignment.username != username:
         return redirect(url_for("dashboard"))
-
-    ref = assignment.sefaria_ref
-    if not ref:
+    if not assignment.sefaria_ref:
         return redirect(url_for("dashboard"))
 
-    # Get the aliyah index so we can isolate just that aliyah's verses
-    aliyah_idx = ALIYAH_INDEX.get(assignment.aliyah)
+    verses = get_verses(assignment.parasha, assignment.aliyah,
+                        fallback_ref=assignment.sefaria_ref)
 
-    # Fetch all aliyot refs for this parasha to find verse boundaries
-    aliyot_refs = fetch_parasha_aliyot(assignment.parasha)
-
-    # If we have a specific aliyah and its ref, fetch ONLY that aliyah's ref
-    # This ensures we only load and display the exact assigned section
-    if aliyah_idx is not None and aliyot_refs and aliyah_idx < len(aliyot_refs):
-        aliyah_ref = aliyot_refs[aliyah_idx]
-        # Fetch just this aliyah's text and recordings directly
-        verses, _ = get_section_data(aliyah_ref, [])
-    else:
-        # Fallback: fetch the whole parasha ref
-        verses, _ = get_section_data(ref, [])
-
-    # Re-number verses starting from 1 for clean display
-    for i, v in enumerate(verses, start=1):
-        v['display_num'] = i
-
-    return render_template("parasha.html",
+    return render_template("student/parasha.html",
         name       = assignment.title,
-        ref        = ref,
+        ref        = assignment.sefaria_ref,
         verses     = verses,
-        assignment = assignment
+        assignment = assignment,
     )
 
 
@@ -631,15 +457,13 @@ def teacher_student_view(student_username):
     if not username: return redirect(url_for("home"))
     teacher = User.query.filter_by(username=username, role="teacher").first()
     if not teacher: return redirect(url_for("dashboard"))
-
-    # Confirm this student is actually in the teacher's class
     student = User.query.filter_by(username=student_username, role="student").first()
     if not student: return redirect(url_for("teacher_dashboard"))
 
     submitted = Assignment.query.filter_by(username=student_username, assigned_by=username, submitted=True).all()
     assigned  = Assignment.query.filter_by(username=student_username, assigned_by=username, submitted=False).all()
 
-    return render_template("teacher_student_view.html",
+    return render_template("teacher/student_view.html",
         student_username = student_username,
         submitted        = submitted,
         assigned         = assigned,
@@ -656,27 +480,18 @@ def teacher_preview(assignment_id):
     if not username: return redirect(url_for("home"))
     teacher = User.query.filter_by(username=username, role="teacher").first()
     if not teacher: return redirect(url_for("dashboard"))
-
     assignment = Assignment.query.get(assignment_id)
     if not assignment: return redirect(url_for("teacher_dashboard"))
-
-    ref = assignment.sefaria_ref
-    if not ref:
+    if not assignment.sefaria_ref:
         return redirect(url_for("teacher_student_view", student_username=assignment.username))
 
-    aliyah_idx  = ALIYAH_INDEX.get(assignment.aliyah)
-    aliyot_refs = fetch_parasha_aliyot(assignment.parasha)
+    verses = get_verses(assignment.parasha, assignment.aliyah,
+                        fallback_ref=assignment.sefaria_ref)
 
-    if aliyah_idx is not None and aliyot_refs and aliyah_idx < len(aliyot_refs):
-        aliyah_ref = aliyot_refs[aliyah_idx]
-        verses, _  = get_section_data(aliyah_ref, [])
-    else:
-        verses, _  = get_section_data(ref, [])
-
-    return render_template("teacher_preview.html",
+    return render_template("teacher/preview.html",
         assignment = assignment,
         name       = assignment.title,
-        ref        = ref,
+        ref        = assignment.sefaria_ref,
         verses     = verses,
     )
 
@@ -688,32 +503,20 @@ def teacher_review(assignment_id):
     if not username: return redirect(url_for("home"))
     teacher = User.query.filter_by(username=username, role="teacher").first()
     if not teacher: return redirect(url_for("dashboard"))
-
     assignment = Assignment.query.get(assignment_id)
     if not assignment: return redirect(url_for("teacher_dashboard"))
-
-    # Guard: only accessible if submitted AND has a recording
     if not assignment.submitted or not assignment.recording_filename:
         return redirect(url_for("teacher_student_view", student_username=assignment.username))
-
-    # Fetch the Hebrew text for the assigned aliyah (same logic as student read_assignment)
-    ref = assignment.sefaria_ref
-    if not ref:
+    if not assignment.sefaria_ref:
         return redirect(url_for("teacher_student_view", student_username=assignment.username))
 
-    aliyah_idx  = ALIYAH_INDEX.get(assignment.aliyah)
-    aliyot_refs = fetch_parasha_aliyot(assignment.parasha)
+    verses = get_verses(assignment.parasha, assignment.aliyah,
+                        fallback_ref=assignment.sefaria_ref)
 
-    if aliyah_idx is not None and aliyot_refs and aliyah_idx < len(aliyot_refs):
-        aliyah_ref = aliyot_refs[aliyah_idx]
-        verses, _  = get_section_data(aliyah_ref, [])
-    else:
-        verses, _  = get_section_data(ref, [])
-
-    return render_template("teacher_review.html",
+    return render_template("teacher/review.html",
         assignment = assignment,
         name       = assignment.title,
-        ref        = ref,
+        ref        = assignment.sefaria_ref,
         verses     = verses,
     )
 
@@ -728,14 +531,10 @@ def save_grades(assignment_id):
     assignment = Assignment.query.get(assignment_id)
     if not assignment: return jsonify({"error": "Not found"}), 404
 
-    import json as _j
     data = request.get_json(force=True, silent=True) or {}
-    grades_val = data.get("grades")
-    if grades_val is not None:
-        assignment.verse_grades = _j.dumps(grades_val) if isinstance(grades_val, dict) else grades_val
-    # Also persist the feedback note as a draft so it survives Finish Later
-    if "feedback_note" in data:
-        assignment.feedback_note = data["feedback_note"]
+    grades = data.get("grades", {})
+    assignment.verse_grades  = _json.dumps(grades) if isinstance(grades, dict) else grades
+    assignment.feedback_note = data.get("feedback_note", assignment.feedback_note or "")
     db.session.commit()
     return jsonify({"success": True})
 
@@ -748,16 +547,14 @@ def submit_feedback(assignment_id):
     teacher = User.query.filter_by(username=username, role="teacher").first()
     if not teacher: return jsonify({"error": "Not authorized"}), 403
     assignment = Assignment.query.get(assignment_id)
-    if not assignment: return jsonify({"error": "Assignment not found"}), 404
+    if not assignment: return jsonify({"error": "Not found"}), 404
 
-    import json as _j
-    data = request.get_json(force=True, silent=True) or {}
-    grades_val = data.get("grades")
-    if grades_val is not None:
-        assignment.verse_grades = _j.dumps(grades_val) if isinstance(grades_val, dict) else grades_val
-    assignment.feedback_note         = data.get("feedback_note", assignment.feedback_note or "")
+    data   = request.get_json(force=True, silent=True) or {}
+    grades = data.get("grades", {})
+    assignment.verse_grades          = _json.dumps(grades) if isinstance(grades, dict) else grades
+    assignment.feedback_note         = data.get("feedback_note", "")
     assignment.feedback_submitted    = True
-    assignment.feedback_seen         = False   # student hasn't seen it yet
+    assignment.feedback_seen         = False
     assignment.feedback_submitted_at = datetime.utcnow()
     db.session.commit()
     return jsonify({"success": True})
@@ -771,24 +568,19 @@ def view_feedback(assignment_id):
     assignment = Assignment.query.get(assignment_id)
     if not assignment or assignment.username != username:
         return redirect(url_for("dashboard"))
-    # Mark as seen
     if not assignment.feedback_seen:
         assignment.feedback_seen = True
         db.session.commit()
-    import json
+
     grades = {}
     if assignment.verse_grades:
-        try: grades = json.loads(assignment.verse_grades)
+        try: grades = _json.loads(assignment.verse_grades)
         except: grades = {}
-    # Fetch verses so we can show grade alongside text
-    ref = assignment.sefaria_ref
-    aliyah_idx  = ALIYAH_INDEX.get(assignment.aliyah)
-    aliyot_refs = fetch_parasha_aliyot(assignment.parasha)
-    if aliyah_idx is not None and aliyot_refs and aliyah_idx < len(aliyot_refs):
-        verses, _ = get_section_data(aliyot_refs[aliyah_idx], [])
-    else:
-        verses, _ = get_section_data(ref or "", [])
-    return render_template("feedback_view.html",
+
+    verses = get_verses(assignment.parasha, assignment.aliyah,
+                        fallback_ref=assignment.sefaria_ref)
+
+    return render_template("student/feedback_view.html",
         assignment = assignment,
         grades     = grades,
         verses     = verses,
@@ -796,38 +588,36 @@ def view_feedback(assignment_id):
 
 
 # ------------------------------------------------------------------ STUDENT: MARK ALL FEEDBACK SEEN
-@app.route("/mark-feedback-seen", methods=["POST"])
+@app.route("/mark-feedback-seen", methods=["GET","POST"])
 def mark_feedback_seen():
     username = session.get("username")
-    if not username: return jsonify({"error": "Not logged in"}), 401
+    if not username: return redirect(url_for("home"))
     Assignment.query.filter_by(username=username, feedback_submitted=True, feedback_seen=False)\
         .update({"feedback_seen": True})
     db.session.commit()
-    return jsonify({"success": True})
+    if request.is_json:
+        return jsonify({"success": True})
+    return redirect(url_for("dashboard"))
+
+
+# ------------------------------------------------------------------ TEACHER: RECORD NUSACH
 @app.route("/teacher/record-nusach/<int:assignment_id>")
 def teacher_record_nusach(assignment_id):
     username = session.get("username")
     if not username: return redirect(url_for("home"))
     teacher = User.query.filter_by(username=username, role="teacher").first()
     if not teacher: return redirect(url_for("dashboard"))
-
     assignment = Assignment.query.get(assignment_id)
     if not assignment or assignment.assigned_by != username:
         return redirect(url_for("teacher_dashboard"))
 
-    ref         = assignment.sefaria_ref
-    aliyah_idx  = ALIYAH_INDEX.get(assignment.aliyah)
-    aliyot_refs = fetch_parasha_aliyot(assignment.parasha)
+    verses = get_verses(assignment.parasha, assignment.aliyah,
+                        fallback_ref=assignment.sefaria_ref)
 
-    if aliyah_idx is not None and aliyot_refs and aliyah_idx < len(aliyot_refs):
-        verses, _ = get_section_data(aliyot_refs[aliyah_idx], [])
-    else:
-        verses, _ = get_section_data(ref or assignment.parasha, [])
-
-    return render_template("teacher_record_nusach.html",
+    return render_template("teacher/record_nusach.html",
         assignment = assignment,
         name       = assignment.title,
-        ref        = ref or assignment.parasha,
+        ref        = assignment.sefaria_ref or assignment.parasha,
         verses     = verses,
     )
 
@@ -836,57 +626,39 @@ def teacher_record_nusach(assignment_id):
 @app.route("/upload-nusach/<int:assignment_id>", methods=["POST"])
 def upload_nusach(assignment_id):
     username = session.get("username")
-    if not username:
-        return jsonify({"error": "Not logged in"}), 401
-
+    if not username: return jsonify({"error": "Not logged in"}), 401
     assignment = Assignment.query.get(assignment_id)
     if not assignment or assignment.assigned_by != username:
         return jsonify({"error": "Not authorized"}), 403
-
     if "recording" not in request.files:
         return jsonify({"error": "No file received"}), 400
-
     file = request.files["recording"]
     if not file or file.filename == "":
         return jsonify({"error": "Empty file"}), 400
-
     filename = f"teacher_{assignment_id}_{secure_filename(username)}.webm"
-    filepath = os.path.join(app.config["RECORDING_FOLDER"], filename)
-    file.save(filepath)
-
+    file.save(os.path.join(app.config["RECORDING_FOLDER"], filename))
     assignment.teacher_recording_filename = filename
     db.session.commit()
-
     return jsonify({"success": True, "filename": filename})
 
 
-# ------------------------------------------------------------------ UPLOAD RECORDING
+# ------------------------------------------------------------------ STUDENT: UPLOAD RECORDING
 @app.route("/upload-recording/<int:assignment_id>", methods=["POST"])
 def upload_recording(assignment_id):
     username = session.get("username")
-    if not username:
-        return jsonify({"error": "Not logged in"}), 401
-
+    if not username: return jsonify({"error": "Not logged in"}), 401
     assignment = Assignment.query.get(assignment_id)
     if not assignment or assignment.username != username:
         return jsonify({"error": "Not authorized"}), 403
-
     if "recording" not in request.files:
         return jsonify({"error": "No file received"}), 400
-
     file = request.files["recording"]
     if file.filename == "":
         return jsonify({"error": "Empty filename"}), 400
-
-    # Save as assignment_<id>_<username>.webm (overwrite if re-recorded)
     filename = f"assignment_{assignment_id}_{secure_filename(username)}.webm"
-    filepath = os.path.join(app.config["RECORDING_FOLDER"], filename)
-    file.save(filepath)
-
-    # Store filename on the assignment
+    file.save(os.path.join(app.config["RECORDING_FOLDER"], filename))
     assignment.recording_filename = filename
     db.session.commit()
-
     return jsonify({"success": True, "filename": filename})
 
 
@@ -921,20 +693,21 @@ def edit_assignment(assignment_id):
         a.notes = request.form["notes"].strip()
         db.session.commit()
         return redirect(url_for("dashboard"))
-    return render_template("edit_assignment.html", assignment=a, username=username)
+    return render_template("student/edit_assignment.html", assignment=a, username=username)
 
 @app.route("/congratulations/<int:assignment_id>")
 def congratulations(assignment_id):
     username = session.get("username")
     if not username: return redirect(url_for("home"))
     a = Assignment.query.get(assignment_id)
-    return render_template("congratulations.html", username=username, assignment=a)
+    return render_template("student/congratulations.html", username=username, assignment=a)
 
 @app.route("/resources")
 def resources():
     username = session.get("username")
     if not username: return redirect(url_for("home"))
-    return render_template("resources.html", username=username)
+    return render_template("student/resources.html", username=username)
+
 
 if __name__ == "__main__":
     app.run(debug=True)

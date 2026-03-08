@@ -1,0 +1,274 @@
+/* ════════════════════════════════════════════
+   student.css  —  ScroLein student pages
+   Dashboard, parasha reader, feedback view,
+   recording panel, auth pages.
+════════════════════════════════════════════ */
+
+/* ── Auth pages (login, register, class-id) ── */
+.auth-page {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(160deg, #f7edd8 0%, #fff8ee 60%, #f0e6d0 100%);
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; padding: 40px 20px;
+}
+.auth-logo { margin-bottom: 8px; text-align: center; }
+.auth-logo img { width: 300px; max-width: 88vw; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15)); }
+.auth-tagline { color: #8a6a3a; font-size: 14px; letter-spacing: 0.06em; margin-bottom: 28px; text-align: center; font-style: italic; }
+.auth-card {
+  background: white; padding: 36px 44px; border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(150,100,20,0.13);
+  width: 100%; max-width: 380px; border-top: 4px solid #b8880c;
+  font-family: Arial, sans-serif;
+}
+.auth-card h2 { font-size: 20px; color: #2c1a06; margin-bottom: 4px; }
+.auth-card .sub { font-size: 13px; color: #a08060; margin-bottom: 20px; }
+.auth-label { display: block; margin-top: 14px; margin-bottom: 4px; font-weight: bold; color: #3a2a10; font-size: 13px; }
+.auth-input {
+  width: 100%; padding: 10px 12px; font-size: 15px;
+  border: 1.5px solid #ddd; border-radius: 6px;
+  transition: border-color 0.2s; background: #fffdf8; font-family: Arial, sans-serif;
+}
+.auth-input:focus { border-color: #b8880c; outline: none; box-shadow: 0 0 0 3px rgba(184,136,12,0.12); }
+.auth-input.error-field { border-color: #e74c3c; background: #fff8f8; }
+.auth-btn {
+  margin-top: 22px; width: 100%; padding: 12px; font-size: 16px; font-weight: bold;
+  background: linear-gradient(135deg, #b8880c, #d4a020); color: white;
+  border: none; border-radius: 7px; cursor: pointer; letter-spacing: 0.03em; transition: opacity 0.15s;
+  font-family: Arial, sans-serif;
+}
+.auth-btn:hover { opacity: 0.9; }
+.auth-error {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: #fdf0ef; border: 1.5px solid #e74c3c;
+  border-radius: 7px; padding: 12px 14px; margin-bottom: 8px;
+}
+.auth-error-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.auth-error-msg { color: #c0392b; font-size: 14px; line-height: 1.4; }
+.auth-error-msg strong { display: block; margin-bottom: 2px; font-size: 15px; }
+.auth-footer { margin-top: 18px; font-size: 13px; color: #aaa; text-align: center; font-family: Arial, sans-serif; }
+.auth-footer a { color: #b8880c; text-decoration: none; }
+.auth-footer a:hover { text-decoration: underline; }
+.auth-info-box { background: #f4ecf7; border: 1.5px solid #8e44ad; border-radius: 7px; padding: 12px 14px; margin-bottom: 16px; color: #6c3483; font-size: 13px; font-family: Arial, sans-serif; }
+.auth-choice-cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 16px; }
+.auth-choice-card {
+  background: white; border-radius: 12px; padding: 28px 32px; text-align: center;
+  box-shadow: 0 4px 16px rgba(150,100,20,0.1); text-decoration: none;
+  border: 2px solid transparent; transition: border-color 0.2s, transform 0.15s;
+  flex: 1; min-width: 180px; max-width: 220px;
+}
+.auth-choice-card:hover { border-color: #b8880c; transform: translateY(-2px); }
+.auth-choice-icon { font-size: 36px; margin-bottom: 10px; }
+.auth-choice-title { font-size: 17px; font-weight: bold; color: #2c1a06; font-family: Arial, sans-serif; }
+.auth-choice-desc { font-size: 12px; color: #888; margin-top: 4px; font-family: Arial, sans-serif; }
+
+/* ── Dashboard nav ── */
+.dash-nav {
+  background-color: #2c1a06; color: white;
+  padding: 10px 32px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.dash-nav-left { display: flex; align-items: center; gap: 16px; }
+.dash-nav-right { display: flex; gap: 10px; align-items: center; }
+.dash-nav-right span { font-size: 14px; opacity: 0.8; font-family: Arial, sans-serif; }
+.btn-nav { padding: 8px 14px; border-radius: 5px; text-decoration: none; font-size: 13px; color: white; white-space: nowrap; font-family: Arial, sans-serif; }
+.btn-nav.green  { background: #27ae60; }
+.btn-nav.green:hover { background: #1e8449; }
+.btn-nav.amber  { background: #d4a020; }
+.btn-nav.amber:hover { background: #b8880c; }
+.btn-nav.red    { background: #c0392b; }
+.btn-nav.red:hover   { background: #a93226; }
+
+/* ── Dashboard body ── */
+.dash-container { max-width: 800px; margin: 36px auto; padding: 0 24px; }
+.dash-welcome { font-size: 26px; color: #2c3e50; margin-bottom: 4px; font-family: Arial, sans-serif; }
+.dash-subtitle { color: #777; margin-bottom: 28px; font-size: 15px; font-family: Arial, sans-serif; }
+
+/* Teacher accordion */
+.teacher-block { margin-bottom: 20px; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.09); }
+.teacher-block summary {
+  background-color: #2c1a06; color: white;
+  padding: 16px 22px; cursor: pointer; user-select: none;
+  list-style: none; display: flex; justify-content: space-between; align-items: center;
+  font-family: Arial, sans-serif;
+}
+.teacher-block summary::-webkit-details-marker { display: none; }
+.teacher-block summary:hover { background-color: #1e1204; }
+.teacher-block[open] summary { background-color: #1e1204; }
+.teacher-block-title h2 { font-size: 17px; margin-bottom: 3px; }
+.teacher-block-title .pin-label { font-size: 12px; opacity: 0.7; letter-spacing: 1px; }
+.summary-chevron { font-size: 16px; transition: transform 0.2s; }
+.teacher-block[open] .summary-chevron { transform: rotate(180deg); }
+.teacher-body { background: #fafafa; padding: 20px 22px; }
+
+/* Section titles inside accordion */
+.section-label {
+  font-size: 15px; font-weight: bold; color: #7a4f1a;
+  border-bottom: 2px solid #b8880c;
+  padding-bottom: 6px; margin-bottom: 12px; margin-top: 18px;
+  font-family: Arial, sans-serif;
+}
+.section-label:first-child { margin-top: 0; }
+.section-label.purple { color: #6c3483; border-color: #8e44ad; }
+
+/* Assignment cards */
+.asgn-card {
+  background: white; border-radius: 8px;
+  padding: 16px 20px; margin-bottom: 10px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+}
+.asgn-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; gap: 12px; flex-wrap: wrap; }
+.asgn-info h3 { font-size: 16px; color: #2c3e50; margin-bottom: 3px; font-family: Arial, sans-serif; }
+.asgn-info p  { font-size: 12px; color: #888; font-family: Arial, sans-serif; }
+.asgn-actions { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; align-items: flex-start; }
+.asgn-note { font-size: 12px; color: #666; background: #f4f4f4; border-left: 3px solid #ddd; padding: 5px 9px; border-radius: 3px; margin-top: 4px; font-style: italic; font-family: Arial, sans-serif; }
+.empty-note { color: #bbb; font-style: italic; font-size: 13px; font-family: Arial, sans-serif; margin-bottom: 8px; }
+
+/* Completed cards */
+.asgn-card.done { border-left: 3px solid #27ae60; }
+.checkmark { font-size: 18px; color: #27ae60; }
+
+/* Feedback cards */
+.asgn-card.feedback { border-left: 4px solid #8e44ad; }
+.asgn-card.feedback.unseen { border-left-color: #e74c3c; }
+.grade-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.gp { padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: bold; font-family: Arial, sans-serif; }
+.gp.perfect { background: #eafaf1; color: #1e8449; border: 1px solid #27ae60; }
+.gp.some    { background: #fef9e7; color: #b7770d; border: 1px solid #d4a020; }
+.gp.work    { background: #fdf0ef; color: #c0392b; border: 1px solid #e74c3c; }
+.new-tag { font-size: 10px; background: #e74c3c; color: white; padding: 2px 5px; border-radius: 8px; vertical-align: middle; font-family: Arial, sans-serif; margin-left: 4px; }
+
+/* Shared action buttons */
+.btn-sm {
+  display: inline-block; padding: 7px 13px; border-radius: 5px;
+  font-size: 13px; font-weight: bold; text-decoration: none;
+  border: none; cursor: pointer; font-family: Arial, sans-serif;
+  white-space: nowrap; transition: background 0.15s;
+}
+.btn-sm.green   { background: #27ae60; color: white; }
+.btn-sm.green:hover { background: #1e8449; }
+.btn-sm.blue    { background: #2980b9; color: white; }
+.btn-sm.blue:hover  { background: #1f6391; }
+.btn-sm.amber   { background: #d4a020; color: white; }
+.btn-sm.amber:hover { background: #b8880c; }
+.btn-sm.orange  { background: #e67e22; color: white; }
+.btn-sm.orange:hover { background: #ca6f1e; }
+.btn-sm.purple  { background: #8e44ad; color: white; }
+.btn-sm.purple:hover { background: #7d3c98; }
+.btn-sm.ghost   { background: white; color: #6c3483; border: 2px solid #6c3483; }
+.btn-sm.ghost:hover { background: #6c3483; color: white; }
+
+/* Feedback notification popup */
+.feedback-popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 200; justify-content: center; align-items: center; }
+.feedback-popup-overlay.active { display: flex; }
+.feedback-popup {
+  background: white; border-radius: 14px; padding: 36px 40px;
+  max-width: 460px; width: 92%;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.25);
+  text-align: center; font-family: Arial, sans-serif;
+}
+.feedback-popup h2 { color: #6c3483; font-size: 22px; margin-bottom: 8px; }
+.feedback-popup p  { color: #555; font-size: 14px; margin-bottom: 18px; line-height: 1.6; }
+.fpl-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #f9f0ff; border-radius: 7px; margin-bottom: 8px; border-left: 3px solid #8e44ad; }
+.fpl-info { text-align: left; }
+.fpl-info strong { display: block; font-size: 14px; color: #2c3e50; }
+.fpl-info span   { font-size: 12px; color: #888; }
+.fpl-link { color: #8e44ad; font-weight: bold; font-size: 14px; text-decoration: none; }
+
+/* No classes */
+.no-classes { background: white; border-radius: 10px; padding: 36px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.07); font-family: Arial, sans-serif; }
+.no-classes p { color: #888; margin-bottom: 16px; }
+
+/* ── Parasha reader / feedback: assignment banner ── */
+.assignment-banner {
+  background: var(--navy); border: 1px solid var(--gold);
+  border-radius: 8px; padding: 14px 20px; margin-bottom: 1.2rem; direction: ltr;
+}
+.banner-title { color: var(--parchment); font-size: 1.05rem; font-family: 'Frank Ruhl Libre', serif; font-weight: 700; margin-bottom: 4px; }
+.banner-meta  { color: var(--gold-lt); font-size: 0.85rem; font-family: Arial, sans-serif; }
+.banner-note  { color: #aaa; font-size: 0.82rem; font-style: italic; margin-top: 6px; border-top: 1px solid rgba(184,136,12,0.3); padding-top: 6px; font-family: Arial, sans-serif; }
+
+/* ── Recording panel ── */
+.record-panel {
+  background: white; border: 2px solid var(--rule);
+  border-radius: 10px; padding: 20px 24px; margin-bottom: 1.5rem;
+  direction: ltr; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+}
+.record-panel h3 { font-family: 'Frank Ruhl Libre', serif; font-size: 1.05rem; color: var(--navy); flex-basis: 100%; }
+.btn-record {
+  padding: 9px 20px; font-size: 14px; font-family: Arial, sans-serif;
+  border: none; border-radius: 6px; cursor: pointer; font-weight: bold;
+  transition: background 0.15s;
+}
+.btn-record.start { background: #c0392b; color: white; }
+.btn-record.start:hover { background: #a93226; }
+.btn-record.stop  { background: #7f8c8d; color: white; }
+.btn-record.stop:hover  { background: #626f70; }
+.btn-record:disabled { opacity: 0.4; cursor: not-allowed; }
+.rec-dot { display: none; width: 11px; height: 11px; border-radius: 50%; background: #c0392b; animation: blink 1s infinite; flex-shrink: 0; }
+.rec-dot.visible { display: inline-block; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.rec-status { font-size: 13px; color: #555; font-family: Arial, sans-serif; flex: 1; }
+.playback-area { flex-basis: 100%; margin-top: 4px; display: none; }
+.playback-area audio { width: 100%; border-radius: 6px; }
+.upload-status { font-size: 13px; font-family: Arial, sans-serif; padding: 6px 12px; border-radius: 5px; display: none; flex-basis: 100%; }
+.upload-status.saving { background: #fef9e7; color: #d68910; display: block; }
+.upload-status.saved  { background: #eafaf1; color: #1e8449; display: block; }
+.upload-status.error  { background: #fdf0ef; color: #c0392b; display: block; }
+.existing-rec { flex-basis: 100%; background: #eafaf1; border: 1px solid #27ae60; border-radius: 6px; padding: 10px 14px; font-size: 13px; font-family: Arial, sans-serif; color: #1e8449; }
+.existing-rec audio { width: 100%; margin-top: 8px; border-radius: 4px; }
+
+/* Submit-after-recording row (shown once upload is saved) */
+.submit-row { flex-basis: 100%; display: none; }
+.submit-row.visible { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* ── Feedback view: grade indicators on verses ── */
+.verse-outer { display: flex; align-items: center; gap: 12px; direction: ltr; padding: 2px 0; }
+.verse-content { flex: 1; direction: rtl; }
+.verse-content .verse-row { padding: 0.5rem 0; background: transparent !important; }
+.grade-dot {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: bold; color: white; font-family: Arial, sans-serif;
+}
+.grade-dot.perfect { background: #27ae60; }
+.grade-dot.some    { background: #d4a020; }
+.grade-dot.work    { background: #c0392b; }
+.grade-dot.none    { background: rgba(0,0,0,0.08); }
+.verse-item.graded-perfect { border-left: 3px solid #27ae60; }
+.verse-item.graded-some    { border-left: 3px solid #d4a020; }
+.verse-item.graded-work    { border-left: 3px solid #c0392b; }
+
+/* Feedback summary banner */
+.fb-summary {
+  direction: ltr;
+  background: linear-gradient(135deg, #1a2a1a 0%, #2c1a06 50%, #1a1a2e 100%);
+  border: 1px solid rgba(184,136,12,0.35);
+  border-radius: 10px; padding: 20px 24px; margin-bottom: 1.4rem;
+}
+.fb-from  { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold-lt); margin-bottom: 4px; font-family: Arial, sans-serif; }
+.fb-title { color: white; font-family: 'Frank Ruhl Libre', serif; font-size: 1.15rem; font-weight: 700; }
+.fb-meta  { color: #c8a86b; font-size: 0.84rem; margin-top: 3px; font-family: Arial, sans-serif; }
+.fb-date  { color: #909a80; font-size: 0.78rem; margin-top: 3px; font-family: Arial, sans-serif; }
+.fb-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.fb-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 12px; font-weight: bold; font-family: Arial, sans-serif;
+}
+.fb-pill-dot { width: 9px; height: 9px; border-radius: 50%; }
+.fb-pill.perfect  { background: rgba(30,132,73,0.2);  color: #4caf73; border: 1px solid rgba(30,132,73,0.45); }
+.fb-pill.some     { background: rgba(183,119,13,0.2); color: #e0a030; border: 1px solid rgba(183,119,13,0.45); }
+.fb-pill.work     { background: rgba(192,57,43,0.2);  color: #e05a4a; border: 1px solid rgba(192,57,43,0.45); }
+.fb-pill.ungraded { background: rgba(255,255,255,0.06); color: #888; border: 1px solid rgba(255,255,255,0.12); }
+.fb-pill-dot.perfect  { background: #27ae60; }
+.fb-pill-dot.some     { background: #d4a020; }
+.fb-pill-dot.work     { background: #c0392b; }
+.fb-pill-dot.ungraded { background: #888; }
+.teacher-note {
+  margin-top: 14px; padding: 12px 16px;
+  background: rgba(255,255,255,0.06);
+  border-left: 3px solid var(--gold); border-radius: 0 6px 6px 0;
+  color: #e8d8b0; font-size: 0.88rem; font-style: italic; font-family: Arial, sans-serif;
+}
+.teacher-note strong { font-style: normal; color: var(--gold-lt); font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 4px; }
+.fb-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }

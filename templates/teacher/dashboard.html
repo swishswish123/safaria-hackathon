@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Teacher Dashboard – ScroLein</title>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='teacher.css') }}"/>
+</head>
+<body>
+
+<nav class="t-nav">
+  <div class="t-nav-left">
+    <img src="/static/scrolein_logo_white.png" alt="ScroLein" class="nav-logo"/>
+  </div>
+  <div class="t-nav-right">
+    <span>{{ teacher.username }}</span>
+    <a href="/logout" class="btn-t-logout">Log Out</a>
+  </div>
+</nav>
+
+<div class="pin-banner">
+  <span class="pin-banner-label">Your Class PIN:</span>
+  <span class="pin-code">{{ teacher.teacher_pin }}</span>
+  <span class="pin-hint">Share this with your students so they can join.</span>
+</div>
+
+{% if new_pin %}
+<div class="new-pin-alert">
+  Welcome! Your account is ready. Your Class PIN is <strong>{{ new_pin }}</strong> — write it down and share it with your students!
+</div>
+{% endif %}
+
+<div class="t-container">
+  <div class="t-section-title">My Students</div>
+
+  {% if student_data %}
+    {% for s in student_data %}
+    <details class="student-card">
+      <summary>
+        <div class="student-info">
+          <h3>{{ s.username }}</h3>
+          <div class="student-badges">
+            <span class="badge blue">{{ s.total }} assigned</span>
+            <span class="badge green">{{ s.submitted }} submitted</span>
+          </div>
+        </div>
+        <span class="summary-arrow">▼</span>
+      </summary>
+      <div class="student-actions">
+        <a href="/teacher/assign/{{ s.username }}"  class="btn-assign">+ Assign Work</a>
+        <a href="/teacher/student/{{ s.username }}" class="btn-view-asgn">📄 View Assignments</a>
+      </div>
+    </details>
+    {% endfor %}
+  {% else %}
+    <p style="color:#aaa; font-style:italic; font-size:14px; font-family:Arial,sans-serif;">
+      No students have joined your class yet. Share your PIN above!
+    </p>
+  {% endif %}
+
+</div>
+</body>
+</html>

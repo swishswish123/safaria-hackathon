@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard – ScroLein</title>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='student.css') }}"/>
+</head>
+<body>
+
+<nav class="dash-nav">
+  <div class="dash-nav-left">
+    <img src="/static/scrolein_logo_white.png" alt="ScroLein" class="nav-logo"/>
+  </div>
+  <div class="dash-nav-right">
+    <span>{{ username }}</span>
+    <a href="/add-class" class="btn-nav green">+ Join Class</a>
+    <a href="/resources"  class="btn-nav amber">Resources</a>
+    <a href="/logout"     class="btn-nav red">Log Out</a>
+  </div>
+</nav>
+
+<div class="dash-container">
+  <h1 class="dash-welcome">Shalom, {{ username }}! 👋</h1>
+  <p class="dash-subtitle">Here are your leining assignments.</p>
+
+  {% if teacher_sections %}
+    {% for section in teacher_sections %}
+    <details class="teacher-block" open>
+      <summary>
+        <div class="teacher-block-title">
+          <h2>{{ section.teacher_name }}</h2>
+          <div class="pin-label">PIN: {{ section.pin }}</div>
+        </div>
+        <span class="summary-chevron">▼</span>
+      </summary>
+
+      <div class="teacher-body">
+
+        {# ── Pending ── #}
+        <div class="section-label">To Do</div>
+        {% if section.pending %}
+          {% for a in section.pending %}
+          <div class="asgn-card">
+            <div class="asgn-card-top">
+              <div class="asgn-info">
+                <h3>{{ a.title }}</h3>
+                <p>{{ a.parasha }} · {{ a.aliyah }}{% if a.due_date %} · Due: {{ a.due_date }}{% endif %}</p>
+              </div>
+              <div class="asgn-actions">
+                {% if a.sefaria_ref %}
+                  <a href="/read/{{ a.id }}" class="btn-sm green">📖 Read &amp; Record</a>
+                {% endif %}
+                <a href="/edit/{{ a.id }}"  class="btn-sm blue">Edit Notes</a>
+                {# Submit is a plain form POST — no JS needed #}
+                <form method="POST" action="/submit/{{ a.id }}" style="display:inline;">
+                  <button type="submit" class="btn-sm green">Submit ✓</button>
+                </form>
+              </div>
+            </div>
+            {% if a.notes %}<div class="asgn-note">{{ a.notes }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="empty-note">No pending assignments.</p>
+        {% endif %}
+
+        {# ── Submitted, awaiting review ── #}
+        {% if section.completed %}
+        <div class="section-label">Submitted — Awaiting Review</div>
+          {% for a in section.completed %}
+          <div class="asgn-card done">
+            <div class="asgn-card-top">
+              <div class="asgn-info">
+                <h3>{{ a.title }} <span class="checkmark">✓</span></h3>
+                <p>Submitted {{ a.submitted_at.strftime("%B %d, %Y") if a.submitted_at else "" }}</p>
+              </div>
+              <div class="asgn-actions">
+                {% if a.sefaria_ref %}
+                  <a href="/read/{{ a.id }}" class="btn-sm green">Read Text</a>
+                {% endif %}
+                <a href="/edit/{{ a.id }}" class="btn-sm blue">Edit</a>
+                <form method="POST" action="/unsubmit/{{ a.id }}" style="display:inline;">
+                  <button type="submit" class="btn-sm orange">Unsubmit</button>
+                </form>
+              </div>
+            </div>
+            {% if a.notes %}<div class="asgn-note">{{ a.notes }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        {# ── Feedback received ── #}
+        {% if section.feedback %}
+        <div class="section-label purple">Feedback Received</div>
+          {% for a in section.feedback %}
+          <div class="asgn-card feedback {% if not a.feedback_seen %}unseen{% endif %}">
+            <div class="asgn-card-top">
+              <div class="asgn-info">
+                <h3>
+                  {{ a.title }}
+                  {% if not a.feedback_seen %}<span class="new-tag">NEW</span>{% endif %}
+                </h3>
+                <p>{{ a.parasha }} · {{ a.aliyah }} · from {{ a.assigned_by }}</p>
+                <div class="grade-pills">
+                  <span class="gp perfect">✓ {{ a._grade_perfect }}</span>
+                  <span class="gp some">⚠ {{ a._grade_some }}</span>
+                  <span class="gp work">✗ {{ a._grade_work }}</span>
+                </div>
+              </div>
+              <div class="asgn-actions">
+                <a href="/feedback/{{ a.id }}" class="btn-sm purple">View Feedback</a>
+              </div>
+            </div>
+            {% if a.feedback_note %}
+            <div class="asgn-note" style="border-left-color:#8e44ad;">{{ a.feedback_note }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% endif %}
+
+      </div>
+    </details>
+    {% endfor %}
+
+  {% else %}
+  <div class="no-classes">
+    <p>You haven't joined any classes yet.</p>
+    <a href="/add-class" class="btn-sm green">+ Join a Class</a>
+  </div>
+  {% endif %}
+
+</div>
+
+{# ── New feedback popup — shown on login if there's unseen feedback ── #}
+{% if new_feedback %}
+<div class="feedback-popup-overlay active" id="feedbackPopup">
+  <div class="feedback-popup">
+    <div style="font-size:44px; margin-bottom:10px;">📋</div>
+    <h2>New feedback!</h2>
+    <p>
+      {% if new_feedback|length == 1 %}Your teacher reviewed one of your assignments.
+      {% else %}Your teacher reviewed {{ new_feedback|length }} assignments.{% endif %}
+    </p>
+    <div style="margin-bottom:18px;">
+      {% for a in new_feedback %}
+      <div class="fpl-item">
+        <div class="fpl-info">
+          <strong>{{ a.title }}</strong>
+          <span>{{ a.parasha }} · {{ a.aliyah }}</span>
+        </div>
+        <a href="/feedback/{{ a.id }}" class="fpl-link">View →</a>
+      </div>
+      {% endfor %}
+    </div>
+    {# Dismiss just hides the popup and marks all seen via a plain form POST #}
+    <form method="POST" action="/mark-feedback-seen">
+      <button type="submit" style="padding:11px 32px; background:#6c3483; color:white; border:none; border-radius:7px; font-size:15px; font-weight:bold; cursor:pointer;">Got it!</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+</body>
+</html>

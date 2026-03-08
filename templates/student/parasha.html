@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ name }} · ScroLein</title>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='student.css') }}"/>
+</head>
+<body>
+
+<nav>
+  <ul class="nav-links">
+    <a href="/dashboard" class="nav-back">← Dashboard</a>
+  </ul>
+  <div class="nav-brand">
+    <img src="/static/scrolein_logo_white.png" alt="ScroLein" class="nav-logo"/>
+  </div>
+</nav>
+
+<div class="page">
+
+  {% if assignment %}
+  <div class="assignment-banner">
+    <div class="banner-title">{{ assignment.title }}</div>
+    <div class="banner-meta">{{ assignment.parasha }} · {{ assignment.aliyah }}{% if assignment.due_date %} · Due: {{ assignment.due_date }}{% endif %}</div>
+    {% if assignment.notes %}<div class="banner-note">Teacher's note: {{ assignment.notes }}</div>{% endif %}
+  </div>
+  {% endif %}
+
+  {# ── Recording panel ── #}
+  {% if assignment %}
+  <div class="record-panel">
+    <h3>Record Your Leining</h3>
+
+    {% if assignment.recording_filename %}
+    <div class="existing-rec">
+      You have a saved recording. Recording again will replace it.
+      <audio controls src="/static/recordings/{{ assignment.recording_filename }}"></audio>
+    </div>
+    {% endif %}
+
+    <button class="btn-record start" id="btn-start" onclick="startRec()">⏺ Start Recording</button>
+    <button class="btn-record stop"  id="btn-stop"  onclick="stopRec()" disabled>⏹ Stop</button>
+    <span class="rec-dot"    id="rec-dot"></span>
+    <span class="rec-status" id="rec-status">Press Start when you are ready to lein.</span>
+
+    <div class="playback-area" id="playback-area">
+      <audio id="playback-audio" controls></audio>
+    </div>
+    <div class="upload-status" id="upload-status"></div>
+  </div>
+  {% endif %}
+
+  <div class="parasha-header">
+    <h1>{{ name }}</h1>
+    <div class="ref-tag">{{ ref }}</div>
+    <div class="legend">
+      <span class="dot"></span> Gold dot = Sefaria cantillation recording available &nbsp;·&nbsp;
+      <strong>{{ verses | length }}</strong> pasukim
+    </div>
+  </div>
+
+  <script>
+    const VERSES         = {{ verses | tojson }};
+    const ASSIGNMENT_ID  = {{ assignment.id if assignment else 'null' }};
+    const TEACHER_REC    = {{ ('"' + '/static/recordings/' + assignment.teacher_recording_filename + '"') | safe if (assignment and assignment.teacher_recording_filename) else 'null' }};
+  </script>
+
+  <ul class="verse-list" id="verse-list">
+    {% for v in verses %}
+    <li class="verse-item clickable {% if v.media_url %}has-recording{% endif %}" id="verse-{{ v.num }}" onclick="jumpTo({{ loop.index0 }})">
+      <div class="verse-row">
+        <span class="verse-num">{% if v.chapter is defined and v.verse is defined %}{{ v.chapter }}:{{ v.verse }}{% else %}{{ v.num }}{% endif %}</span>
+        <span class="verse-text">
+          {% if not v.media_url %}<span class="no-rec-badge">no audio</span>{% endif %}
+          {{ v.text }}
+        </span>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <div class="player-bar">
+    <button class="player-btn" id="btn-prev" onclick="go(-1)" title="Previous">◀</button>
+    <button class="player-btn" id="btn-play" onclick="togglePlay()" title="Play / Pause">▶</button>
+    <button class="player-btn" id="btn-next" onclick="go(+1)"  title="Next">▶▶</button>
+    <div class="player-info">
+      <div class="player-verse-label" id="player-label">
+        {% if assignment and assignment.teacher_recording_filename %}Teacher's recording — press Play{% else %}Click a pasuk or press Play{% endif %}
+      </div>
+      <div class="player-progress" id="player-progress"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Player ────────────────────────────────
+let idx = 0, audio = null, paused = false;
+const btnPlay    = document.getElementById('btn-play');
+const labelEl    = document.getElementById('player-label');
+const progressEl = document.getElementById('player-progress');
+
+function fmt(s) { const m=Math.floor(s/60),sec=Math.floor(s%60); return `${m}:${sec.toString().padStart(2,'0')}`; }
+
+if (TEACHER_REC) {
+  const ta = new Audio(TEACHER_REC);
+  ta.addEventListener('timeupdate', () => { if (ta.duration) progressEl.textContent = `${fmt(ta.currentTime)} / ${fmt(ta.duration)}`; });
+  ta.addEventListener('ended', () => { btnPlay.innerHTML='▶'; labelEl.textContent='Finished!'; });
+  ta.addEventListener('error', () => { progressEl.textContent='Could not load.'; btnPlay.disabled=true; });
+  function togglePlay() { if (!ta.paused) { ta.pause(); btnPlay.innerHTML='▶'; } else { ta.play(); btnPlay.innerHTML='⏸'; } }
+  document.getElementById('btn-prev').disabled = true;
+  document.getElementById('btn-next').disabled = true;
+} else {
+  function highlight(i) {
+    document.querySelectorAll('.verse-item').forEach(el=>el.classList.remove('active'));
+    const li=document.getElementById('verse-'+VERSES[i].num);
+    if (li) { li.classList.add('active'); li.scrollIntoView({behavior:'smooth',block:'center'}); }
+  }
+  function updateBar() {
+    const v=VERSES[idx];
+    labelEl.textContent    = (v.chapter&&v.verse) ? `Pasuk ${v.chapter}:${v.verse}` : `Pasuk ${v.num}`;
+    progressEl.textContent = `${idx+1} / ${VERSES.length}${v.media_url?'':' · no audio'}`;
+  }
+  function stopAudio() { if (audio){audio.pause();audio.src='';audio=null;} }
+  function playFrom(i) {
+    stopAudio(); paused=false; idx=i; highlight(i); updateBar(); btnPlay.innerHTML='⏸';
+    const v=VERSES[i];
+    if (!v.media_url) { btnPlay.innerHTML='▶▶'; setTimeout(()=>{ if(!paused)advance(); },1200); return; }
+    audio=new Audio(v.media_url); audio.onended=advance; audio.onerror=()=>advance(); audio.play().catch(advance);
+  }
+  function advance() { if (paused)return; if (idx<VERSES.length-1) playFrom(idx+1); else { stopAudio();btnPlay.innerHTML='▶';labelEl.textContent='Finished!';progressEl.textContent=''; } }
+  function togglePlay() {
+    if (audio&&!audio.paused){audio.pause();paused=true;btnPlay.innerHTML='▶';}
+    else if (audio&&audio.paused){paused=false;audio.play();btnPlay.innerHTML='⏸';}
+    else playFrom(idx);
+  }
+  function go(d){const n=idx+d;if(n>=0&&n<VERSES.length)playFrom(n);}
+  function jumpTo(i){playFrom(i);}
+  highlight(0); updateBar();
+}
+
+// ── Mic recorder ─────────────────────────
+let mediaRecorder=null, chunks=[];
+const btnStart  = document.getElementById('btn-start');
+const btnStop   = document.getElementById('btn-stop');
+const recDot    = document.getElementById('rec-dot');
+const recStatus = document.getElementById('rec-status');
+const playArea  = document.getElementById('playback-area');
+const playAud   = document.getElementById('playback-audio');
+const upStatus  = document.getElementById('upload-status');
+
+async function startRec() {
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({audio:true}); }
+  catch { recStatus.textContent='Microphone access denied.'; return; }
+  chunks=[];
+  const mime=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':'audio/webm';
+  mediaRecorder=new MediaRecorder(stream,{mimeType:mime});
+  mediaRecorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+  mediaRecorder.onstop=()=>{
+    stream.getTracks().forEach(t=>t.stop());
+    const blob=new Blob(chunks,{type:mime});
+    playAud.src=URL.createObjectURL(blob); playArea.style.display='block';
+    uploadRec(blob,mime);
+  };
+  mediaRecorder.start();
+  btnStart.disabled=true; btnStop.disabled=false;
+  recDot.classList.add('visible'); recStatus.textContent='Recording…';
+  upStatus.className='upload-status'; upStatus.textContent='';
+}
+function stopRec() {
+  if (mediaRecorder&&mediaRecorder.state!=='inactive') mediaRecorder.stop();
+  btnStart.disabled=false; btnStop.disabled=true;
+  recDot.classList.remove('visible'); recStatus.textContent='Stopped. Saving…';
+}
+async function uploadRec(blob) {
+  if (!ASSIGNMENT_ID) return;
+  upStatus.className='upload-status saving'; upStatus.textContent='Saving…';
+  const fd=new FormData(); fd.append('recording',blob,'recording.webm');
+  try {
+    const res=await fetch(`/upload-recording/${ASSIGNMENT_ID}`,{method:'POST',body:fd});
+    const data=await res.json();
+    if (data.success) { upStatus.className='upload-status saved'; upStatus.textContent='Recording saved!'; recStatus.textContent='Saved. Record again to replace it.'; }
+    else throw new Error(data.error||'Unknown');
+  } catch(e) { upStatus.className='upload-status error'; upStatus.textContent='Save failed: '+e.message; }
+}
+</script>
+
+</body>
+</html>

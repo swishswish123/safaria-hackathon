@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Submitted! – ScroLein</title>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='student.css') }}"/>
+</head>
+<body class="auth-page">
+
+  <div style="text-align:center; font-family:Arial,sans-serif;">
+    <div style="font-size:72px; margin-bottom:16px;">🎉</div>
+    <h1 style="font-family:'Frank Ruhl Libre',serif; font-size:2rem; color:#2c1a06; margin-bottom:8px;">Submitted!</h1>
+    {% if assignment %}
+    <p style="color:#555; font-size:16px; margin-bottom:6px;">{{ assignment.title }}</p>
+    {% endif %}
+    <p style="color:#888; font-size:14px; margin-bottom:32px;">Your leining has been sent to your teacher for review.</p>
+    <a href="/dashboard" class="btn-sm green" style="font-size:15px; padding:12px 28px;">← Back to Dashboard</a>
+  </div>
+
+</body>
+</html>

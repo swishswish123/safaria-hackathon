@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ student_username }}'s Assignments – ScroLein</title>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='teacher.css') }}"/>
+</head>
+<body>
+
+<nav class="t-nav">
+  <div class="t-nav-left">
+    <img src="/static/scrolein_logo_white.png" alt="ScroLein" class="nav-logo"/>
+    <a href="/teacher/dashboard" class="btn-t-back">← Dashboard</a>
+  </div>
+  <div class="t-nav-right">
+    <a href="/logout" class="btn-t-logout">Log Out</a>
+  </div>
+</nav>
+
+<div class="t-page">
+  <div class="t-page-header">
+    <h2>{{ student_username }}'s Assignments</h2>
+    <p>{{ submitted_count }} submitted &nbsp;·&nbsp; {{ assigned_count }} assigned &nbsp;·&nbsp; {{ total_count }} total</p>
+  </div>
+
+  <div class="t-subsection">Submitted</div>
+  {% if submitted %}
+    {% for a in submitted %}
+    <div class="t-asgn-card submitted">
+      <div class="t-ainfo">
+        <div class="t-atitle">
+          {{ a.title }}
+          <span class="tbadge green">Submitted</span>
+          {% if a.recording_filename %}<span class="tbadge purple">Has Recording</span>{% endif %}
+        </div>
+        <div class="t-ameta">{{ a.parasha }} · {{ a.aliyah }} · Due: {{ a.due_date or 'No date' }}</div>
+        {% if a.submitted_at %}<div class="t-subdate">Submitted {{ a.submitted_at.strftime('%B %d, %Y at %I:%M %p') }}</div>{% endif %}
+        {% if a.notes %}<div class="t-anote">Student note: {{ a.notes }}</div>{% endif %}
+      </div>
+      <div class="t-aactions">
+        {% if a.recording_filename %}
+          <a href="/teacher/review/{{ a.id }}" class="btn-review">▶ Review Recording</a>
+        {% else %}
+          <span class="no-rec-note">No recording uploaded</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <p style="color:#aaa; font-style:italic; font-size:14px; font-family:Arial,sans-serif; margin-bottom:16px;">No submitted assignments yet.</p>
+  {% endif %}
+
+  <div class="t-subsection">Assigned — Awaiting Submission</div>
+  {% if assigned %}
+    {% for a in assigned %}
+    <div class="t-asgn-card assigned">
+      <div class="t-ainfo">
+        <div class="t-atitle">{{ a.title }} <span class="tbadge amber">Assigned</span></div>
+        <div class="t-ameta">{{ a.parasha }} · {{ a.aliyah }} · Due: {{ a.due_date or 'No date' }}</div>
+        {% if a.notes %}<div class="t-anote">Teacher note: {{ a.notes }}</div>{% endif %}
+      </div>
+      <div class="t-aactions">
+        {% if a.sefaria_ref %}
+          <a href="/teacher/preview/{{ a.id }}" class="btn-preview">📄 Preview</a>
+        {% else %}
+          <span class="no-rec-note">No text linked</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <p style="color:#aaa; font-style:italic; font-size:14px; font-family:Arial,sans-serif;">No outstanding assignments.</p>
+  {% endif %}
+
+</div>
+</body>
+</html>

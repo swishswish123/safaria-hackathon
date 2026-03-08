@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add a Class – ScroLein</title>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='student.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+</head>
+<body>
+
+<nav>
+  <ul class="nav-links">
+    <a href="/dashboard" class="nav-back">← Dashboard</a>
+  </ul>
+  <div class="nav-brand">
+    <img src="/static/scrolein_logo_white.png" alt="ScroLein" class="nav-logo"/>
+  </div>
+</nav>
+
+<div class="page" style="max-width:480px;">
+  <h2 style="font-family:'Frank Ruhl Libre',serif; color:var(--navy); margin-bottom:1.5rem;">Join Another Class</h2>
+
+  {% if error %}
+  <div class="auth-error" style="margin-bottom:1rem;">
+    <span class="auth-error-icon">⚠️</span>
+    <div class="auth-error-msg">{{ error }}</div>
+  </div>
+  {% endif %}
+
+  {% if success %}
+  <div style="background:#eafaf1; border:1.5px solid #27ae60; border-radius:7px; padding:12px 14px; margin-bottom:1rem; color:#1e8449; font-family:Arial,sans-serif; font-size:14px;">
+    {{ success }}
+  </div>
+  {% endif %}
+
+  <form method="POST">
+    <label class="auth-label">Class PIN</label>
+    <input class="auth-input" type="text" name="class_id"
+           placeholder="e.g. ABC123" autocomplete="off"
+           style="letter-spacing:0.15em; font-size:18px; text-transform:uppercase;"
+           autofocus/>
+    <button type="submit" class="auth-btn">Join Class →</button>
+  </form>
+</div>
+
+</body>
+</html>
